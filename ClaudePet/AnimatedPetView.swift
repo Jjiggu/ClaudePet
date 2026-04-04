@@ -51,28 +51,39 @@ struct AnimatedPetView: View {
     var body: some View {
         if let prefix = resolvedPrefix {
             let count = frameCount(for: prefix)
-            Group {
-                if useTemplateRendering {
-                    Image("\(prefix)_\(frameIndex)")
-                        .renderingMode(.template)
-                        .foregroundStyle(.primary)
-                } else {
-                    Image("\(prefix)_\(frameIndex)")
-                }
-            }
-            .interpolation(.none)
-            .resizable()
-            .frame(width: size, height: size)
-            .task(id: "\(prefix)-\(fps)-\(count)") {
-                guard count > 0 else {
-                    frameIndex = 0
-                    return
-                }
-                frameIndex = 0
-                while !Task.isCancelled {
-                    try? await Task.sleep(for: .seconds(1.0 / fps))
-                    frameIndex = (frameIndex + 1) % count
-                }
+            let frameImage = Image("\(prefix)_\(frameIndex)")
+                .renderingMode(useTemplateRendering ? .template : .original)
+                .interpolation(.none)
+                .resizable()
+                .frame(width: size, height: size)
+
+            if useTemplateRendering {
+                frameImage
+                    .foregroundStyle(.primary)
+                    .task(id: "\(prefix)-\(fps)-\(count)") {
+                        guard count > 0 else {
+                            frameIndex = 0
+                            return
+                        }
+                        frameIndex = 0
+                        while !Task.isCancelled {
+                            try? await Task.sleep(for: .seconds(1.0 / fps))
+                            frameIndex = (frameIndex + 1) % count
+                        }
+                    }
+            } else {
+                frameImage
+                    .task(id: "\(prefix)-\(fps)-\(count)") {
+                        guard count > 0 else {
+                            frameIndex = 0
+                            return
+                        }
+                        frameIndex = 0
+                        while !Task.isCancelled {
+                            try? await Task.sleep(for: .seconds(1.0 / fps))
+                            frameIndex = (frameIndex + 1) % count
+                        }
+                    }
             }
         } else {
             Text(fallbackEmoji)
