@@ -66,6 +66,60 @@ enum PetStage: Int {
     }
 }
 
+enum SessionMood {
+    case idle, calm, warmingUp, focused, overloaded
+
+    init(percent: Double) {
+        switch percent {
+        case 0..<0.01: self = .idle
+        case 0..<0.20: self = .calm
+        case 0..<0.40: self = .warmingUp
+        case 0..<0.60: self = .focused
+        default: self = .overloaded
+        }
+    }
+
+    var badge: String {
+        switch self {
+        case .idle: "휴식중"
+        case .calm: "안정적"
+        case .warmingUp: "시동중"
+        case .focused: "집중중"
+        case .overloaded: "과열직전"
+        }
+    }
+
+    var headline: String {
+        switch self {
+        case .idle: "조용히 쉬고 있어요"
+        case .calm: "아직은 여유 있어요"
+        case .warmingUp: "슬슬 텐션이 올라와요"
+        case .focused: "집중해서 달리는 중이에요"
+        case .overloaded: "오늘은 정말 빡세게 달렸어요"
+        }
+    }
+
+    var dialogue: String {
+        switch self {
+        case .idle: "주인아, 지금은 숨 고르면서 다음 일을 기다리고 있어."
+        case .calm: "아직 버틸 만해. 천천히 페이스 올려도 괜찮아."
+        case .warmingUp: "손이 풀리기 시작했어. 이제 일할 맛 좀 나는데?"
+        case .focused: "나 지금 완전 몰입했어. 이 흐름 끊기면 아쉬울지도."
+        case .overloaded: "헉, 오늘 나 진짜 많이 뛰었어. 잠깐 쉬게 해주면 금방 회복할게."
+        }
+    }
+
+    var hint: String {
+        switch self {
+        case .idle: "여유 있을 때 다음 세션 준비를 해두면 좋아요."
+        case .calm: "아직 안전 구간이에요. 긴 작업 시작하기 좋은 타이밍이에요."
+        case .warmingUp: "속도가 붙는 구간이에요. 중요한 작업 우선순위를 정리해보세요."
+        case .focused: "사용량이 빠르게 올라갈 수 있어요. 리셋 시간도 함께 보는 게 좋아요."
+        case .overloaded: "과열 구간이에요. 다음 세션 전까지 잠깐 쉬거나 모델 사용 계획을 조정해보세요."
+        }
+    }
+}
+
 // MARK: - API Response Models
 
 struct UsageQuota: Decodable {
@@ -198,15 +252,25 @@ final class PetManager: ObservableObject {
 
     /// Status message based on current session utilization
     var petStatusMessage: String {
-        guard let p = fiveHour?.percent else { return "대기중... 💤" }
-        switch p {
-        case 0..<0.01: return "대기중... 💤"
-        case 0..<0.20: return "여유롭네~ 😌"
-        case 0..<0.40: return "슬슬 시작! 🌱"
-        case 0..<0.60: return "열심히 일중! 💪"
-        case 0..<0.80: return "바쁘다 바빠... 😓"
-        default:       return "과부하! 🔥"
-        }
+        sessionMood.headline
+    }
+
+    var sessionMood: SessionMood {
+        SessionMood(percent: fiveHour?.percent ?? 0)
+    }
+
+    var petDialogue: String {
+        sessionMood.dialogue
+    }
+
+    var petCareHint: String {
+        sessionMood.hint
+    }
+
+    var sessionUsageSummary: String {
+        guard let fiveHour else { return "세션 데이터를 불러오는 중이에요." }
+        let percent = Int(fiveHour.utilization.rounded())
+        return "최근 5시간 세션 사용량은 \(percent)%예요."
     }
 
     /// Animation fps: 4 (idle) → 15 (max session). RunCat-style speed.

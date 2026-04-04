@@ -273,9 +273,22 @@ private struct PetTabView: View {
                 )
                 .padding(.top, 16)
 
+                Text(petManager.sessionMood.badge)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(.secondary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.primary.opacity(0.08), in: Capsule())
+
                 Text(petManager.petStatusMessage)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.primary)
+
+                Text(petManager.petDialogue)
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 220)
             }
 
             Divider()
@@ -314,10 +327,45 @@ private struct PetTabView: View {
                 .padding(.vertical, 10)
                 .padding(.horizontal, 14)
 
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("세션 컨디션")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    Text(petManager.sessionUsageSummary)
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+
+                if let session = petManager.fiveHour {
+                    ProgressView(value: session.percent)
+                        .tint(sessionTint(for: session.percent))
+                } else {
+                    ProgressView()
+                        .controlSize(.small)
+                }
+
+                Text(petManager.petCareHint)
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
+            .padding(10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 8))
+            .padding(.horizontal, 14)
+
+            Divider()
+                .padding(.vertical, 10)
+                .padding(.horizontal, 14)
+
             // Stats
             VStack(spacing: 6) {
                 statRow(icon: "✨", label: "오늘", value: "\(petManager.todayTokens.formatted()) tokens")
                 statRow(icon: "📊", label: "이번달", value: "\(petManager.monthlyTokens.formatted()) tokens")
+                if let resetAt = petManager.fiveHour?.resetsAt {
+                    statRow(icon: "⏰", label: "리셋", value: resetAt.formatted(date: .omitted, time: .shortened))
+                }
             }
             .padding(.horizontal, 14)
             .padding(.bottom, 16)
@@ -333,6 +381,16 @@ private struct PetTabView: View {
             Text(value)
                 .font(.caption)
                 .foregroundColor(.primary)
+        }
+    }
+
+    private func sessionTint(for percent: Double) -> Color {
+        switch percent {
+        case 0..<0.2: .green
+        case 0.2..<0.4: .mint
+        case 0.4..<0.6: .yellow
+        case 0.6..<0.8: .orange
+        default: .red
         }
     }
 }
