@@ -15,11 +15,16 @@ private enum Tab { case usage, analytics, pet }
 struct PopoverView: View {
     @ObservedObject var petManager: PetManager
     @State private var tab: Tab = .usage
+    @State private var showCharacterPicker = false
     @State private var showSettings = false
 
     var body: some View {
         Group {
-            if showSettings {
+            if showCharacterPicker {
+                CharacterPickerView {
+                    showCharacterPicker = false
+                }
+            } else if showSettings {
                 SettingsView(petManager: petManager) { showSettings = false }
             } else {
                 VStack(spacing: 0) {
@@ -34,7 +39,9 @@ struct PopoverView: View {
                         )
                         .padding(14)
                     } else {
-                        PetTabView(petManager: petManager)
+                        PetTabView(petManager: petManager) {
+                            showCharacterPicker = true
+                        }
                     }
                 }
             }
@@ -165,37 +172,7 @@ private struct MainView: View {
 
 private struct PetTabView: View {
     @ObservedObject var petManager: PetManager
-    
-    private let previewOptions: [PetPreviewOption] = [
-        .init(
-            name: "물범 말랑이",
-            subtitle: "현재 사용 중",
-            assetName: "pet_preview_seal",
-            accent: Color(red: 0.84, green: 0.92, blue: 1.0),
-            status: .active
-        ),
-        .init(
-            name: "햄말랑",
-            subtitle: "예시 캐릭터",
-            assetName: "pet_preview_hamster",
-            accent: Color(red: 0.99, green: 0.9, blue: 0.76),
-            status: .preview
-        ),
-        .init(
-            name: "토끼 말랑이",
-            subtitle: "예시 캐릭터",
-            assetName: "pet_preview_bunny",
-            accent: Color(red: 0.96, green: 0.93, blue: 1.0),
-            status: .preview
-        ),
-        .init(
-            name: "병아리 말랑이",
-            subtitle: "예시 캐릭터",
-            assetName: "pet_preview_chick",
-            accent: Color(red: 1.0, green: 0.95, blue: 0.76),
-            status: .preview
-        )
-    ]
+    let onOpenCharacterPicker: () -> Void
 
     var body: some View {
         VStack(spacing: 0) {
@@ -296,22 +273,35 @@ private struct PetTabView: View {
                 .padding(.vertical, 10)
                 .padding(.horizontal, 14)
 
-            VStack(alignment: .leading, spacing: 10) {
-                Text("캐릭터")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+            Button(action: onOpenCharacterPicker) {
+                HStack(spacing: 10) {
+                    Image("pet_preview_seal")
+                        .interpolation(.none)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 28, height: 28)
+                        .padding(6)
+                        .background(Color(red: 0.84, green: 0.92, blue: 1.0), in: RoundedRectangle(cornerRadius: 10))
 
-                Text("현재는 물범 말랑이가 실제 펫으로 적용되어 있고, 아래 3종은 다음 캐릭터 예시예요.")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                    ForEach(previewOptions) { option in
-                        PetPreviewCard(option: option)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("캐릭터")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Text("물범 말랑이와 예시 캐릭터 보기")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(.primary)
                     }
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
                 }
+                .padding(10)
+                .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 10))
             }
+            .buttonStyle(.plain)
             .padding(.horizontal, 14)
 
             Divider()
@@ -354,6 +344,75 @@ private struct PetTabView: View {
     }
 }
 
+private struct CharacterPickerView: View {
+    let onBack: () -> Void
+
+    private let previewOptions: [PetPreviewOption] = [
+        .init(
+            name: "물범 말랑이",
+            subtitle: "현재 사용 중",
+            assetName: "pet_preview_seal",
+            accent: Color(red: 0.84, green: 0.92, blue: 1.0),
+            status: .active
+        ),
+        .init(
+            name: "햄말랑",
+            subtitle: "예시 캐릭터",
+            assetName: "pet_preview_hamster",
+            accent: Color(red: 0.99, green: 0.9, blue: 0.76),
+            status: .preview
+        ),
+        .init(
+            name: "토끼 말랑이",
+            subtitle: "예시 캐릭터",
+            assetName: "pet_preview_bunny",
+            accent: Color(red: 0.96, green: 0.93, blue: 1.0),
+            status: .preview
+        ),
+        .init(
+            name: "병아리 말랑이",
+            subtitle: "예시 캐릭터",
+            assetName: "pet_preview_chick",
+            accent: Color(red: 1.0, green: 0.95, blue: 0.76),
+            status: .preview
+        )
+    ]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Button(action: onBack) {
+                HStack(spacing: 6) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 13, weight: .semibold))
+                    Text("뒤로")
+                        .font(.system(size: 15, weight: .semibold))
+                }
+                .foregroundColor(.primary)
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 14)
+            .padding(.top, 14)
+            .padding(.bottom, 10)
+
+            Text("캐릭터")
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .padding(.horizontal, 14)
+                .padding(.bottom, 6)
+
+            ScrollView {
+                VStack(spacing: 10) {
+                    ForEach(previewOptions) { option in
+                        PetPreviewRow(option: option)
+                    }
+                }
+                .padding(.horizontal, 14)
+                .padding(.bottom, 14)
+            }
+        }
+    }
+}
+
 private struct PetPreviewOption: Identifiable {
     enum Status {
         case active
@@ -375,11 +434,30 @@ private struct PetPreviewOption: Identifiable {
     let status: Status
 }
 
-private struct PetPreviewCard: View {
+private struct PetPreviewRow: View {
     let option: PetPreviewOption
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        HStack(spacing: 12) {
+            Image(option.assetName)
+                .interpolation(.none)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 54, height: 54)
+                .padding(6)
+                .background(option.accent, in: RoundedRectangle(cornerRadius: 12))
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(option.name)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.primary)
+                Text(option.subtitle)
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+            }
+
+            Spacer(minLength: 0)
+
             HStack {
                 Text(option.status.label)
                     .font(.system(size: 10, weight: .semibold))
@@ -387,29 +465,10 @@ private struct PetPreviewCard: View {
                     .padding(.horizontal, 7)
                     .padding(.vertical, 3)
                     .background(Color.white.opacity(0.78), in: Capsule())
-                Spacer(minLength: 0)
-            }
-
-            Spacer(minLength: 0)
-
-            Image(option.assetName)
-                .interpolation(.none)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 54, height: 54)
-                .frame(maxWidth: .infinity)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(option.name)
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(.primary)
-                Text(option.subtitle)
-                    .font(.system(size: 10))
-                    .foregroundColor(.secondary)
             }
         }
         .padding(10)
-        .frame(maxWidth: .infinity, minHeight: 122, alignment: .topLeading)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             LinearGradient(
                 colors: [option.accent, Color.white.opacity(0.72)],
