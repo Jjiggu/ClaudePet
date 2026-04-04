@@ -19,9 +19,10 @@ struct MenuBarView: View {
                 if mode == .imageOnly || mode == .both {
                     AnimatedPetView(
                         stage: petManager.petLevel,
-                        size: 18,
+                        size: 16,
                         fps: 8,
-                        fallbackEmoji: petManager.emoji
+                        fallbackEmoji: petManager.emoji,
+                        useTemplateRendering: true
                     )
                 }
                 if (mode == .usageOnly || mode == .both), let session = petManager.fiveHour {
