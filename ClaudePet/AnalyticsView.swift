@@ -30,6 +30,64 @@ struct AnalyticsView: View {
 
     private var maxTokens: Int { max(dailyUsage.values.max() ?? 1, 1) }
 
+    private var totalTokens: Int {
+        dailyUsage.values.reduce(0, +)
+    }
+
+    private var activeDays: Int {
+        dates.filter { (dailyUsage[$0] ?? 0) > 0 }.count
+    }
+
+    private var activeStreak: Int {
+        var streak = 0
+        for date in dates.reversed() {
+            if (dailyUsage[date] ?? 0) > 0 {
+                streak += 1
+            } else if streak > 0 {
+                break
+            }
+        }
+        return streak
+    }
+
+    private var averageTokensPerActiveDay: Int {
+        guard activeDays > 0 else { return 0 }
+        return totalTokens / activeDays
+    }
+
+    private var recentWeekTotal: Int {
+        dates.suffix(7).reduce(0) { $0 + (dailyUsage[$1] ?? 0) }
+    }
+
+    private var previousWeekTotal: Int {
+        dates.dropLast(7).suffix(7).reduce(0) { $0 + (dailyUsage[$1] ?? 0) }
+    }
+
+    private var weeklyTrendText: String {
+        if recentWeekTotal == 0 && previousWeekTotal == 0 {
+            return "최근 2주 활동이 아직 없어요"
+        }
+        if previousWeekTotal == 0 {
+            return "지난주보다 새롭게 사용량이 생겼어요"
+        }
+
+        let delta = recentWeekTotal - previousWeekTotal
+        let percent = Int((Double(abs(delta)) / Double(previousWeekTotal) * 100).rounded())
+        if delta > 0 {
+            return "최근 7일 사용량이 지난 7일보다 \(percent)% 늘었어요"
+        } else if delta < 0 {
+            return "최근 7일 사용량이 지난 7일보다 \(percent)% 줄었어요"
+        } else {
+            return "최근 7일 사용량이 지난주와 비슷해요"
+        }
+    }
+
+    private var weeklyTrendAccent: Color {
+        if recentWeekTotal > previousWeekTotal { return .green }
+        if recentWeekTotal < previousWeekTotal { return .orange }
+        return .secondary
+    }
+
     private func level(for date: Date) -> Int {
         guard let t = dailyUsage[date], t > 0 else { return 0 }
         let r = Double(t) / Double(maxTokens)
@@ -120,18 +178,68 @@ struct AnalyticsView: View {
 
             // Summary row
             if !dailyUsage.isEmpty {
-                let total = dailyUsage.values.reduce(0, +)
-                let activeDays = dailyUsage.filter { $0.value > 0 }.count
                 HStack {
                     Text("35일간 \(activeDays)일 활성")
                         .font(.caption2)
                         .foregroundColor(.secondary)
                     Spacer()
-                    Text("총 \(total.formatted()) tokens")
+                    Text("총 \(totalTokens.formatted()) tokens")
                         .font(.caption2)
                         .foregroundColor(.secondary)
                 }
+
+                VStack(spacing: 8) {
+                    summaryCard(
+                        title: "연속 활동",
+                        value: activeStreak > 0 ? "\(activeStreak)일째" : "오늘은 휴식",
+                        detail: activeStreak > 0
+                            ? "최근 흐름이 이어지고 있어요"
+                            : "다음 사용이 시작되면 다시 쌓여요",
+                        accent: activeStreak > 0 ? .green : .secondary
+                    )
+
+                    summaryCard(
+                        title: "활성일 평균",
+                        value: "\(averageTokensPerActiveDay.formatted()) tokens",
+                        detail: activeDays > 0
+                            ? "토큰을 쓴 날 기준 평균이에요"
+                            : "아직 집계할 활동일이 없어요",
+                        accent: .blue
+                    )
+
+                    summaryCard(
+                        title: "최근 7일 추세",
+                        value: "\(recentWeekTotal.formatted()) tokens",
+                        detail: weeklyTrendText,
+                        accent: weeklyTrendAccent
+                    )
+                }
             }
         }
+    }
+
+    private func summaryCard(title: String, value: String, detail: String, accent: Color) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(title)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                Spacer()
+                Circle()
+                    .fill(accent)
+                    .frame(width: 7, height: 7)
+            }
+
+            Text(value)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(.primary)
+
+            Text(detail)
+                .font(.caption2)
+                .foregroundColor(.secondary)
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 8))
     }
 }
