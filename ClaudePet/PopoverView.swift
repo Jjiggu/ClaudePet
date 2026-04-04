@@ -15,21 +15,18 @@ private enum Tab { case usage, analytics, pet }
 struct PopoverView: View {
     @ObservedObject var petManager: PetManager
     @State private var tab: Tab = .usage
-    @State private var showPicker = false
     @State private var showSettings = false
 
     var body: some View {
         Group {
-            if showPicker {
-                PetPickerView(petManager: petManager) { showPicker = false }
-            } else if showSettings {
+            if showSettings {
                 SettingsView(petManager: petManager) { showSettings = false }
             } else {
                 VStack(spacing: 0) {
                     tabBar
                     Divider()
                     if tab == .usage {
-                        MainView(petManager: petManager) { showPicker = true }
+                        MainView(petManager: petManager)
                     } else if tab == .analytics {
                         AnalyticsView(
                             dailyUsage: petManager.dailyUsage,
@@ -91,7 +88,6 @@ struct PopoverView: View {
 
 private struct MainView: View {
     @ObservedObject var petManager: PetManager
-    let onOpenPicker: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -120,20 +116,6 @@ private struct MainView: View {
             }
 
             Divider()
-
-            // Pet picker row
-            Button(action: onOpenPicker) {
-                HStack {
-                    Text("말랑이")
-                        .font(.caption).foregroundColor(.primary)
-                    Spacer()
-                    Text(petManager.petType.displayName)
-                        .font(.caption).foregroundColor(.secondary)
-                    Image(systemName: "chevron.right")
-                        .font(.caption2).foregroundColor(.secondary)
-                }
-            }
-            .buttonStyle(.plain)
 
             // Bottom bar: refresh (left) + quit (right)
             HStack {
@@ -179,86 +161,41 @@ private struct MainView: View {
     }
 }
 
-// MARK: - Pet Picker View
-
-private struct PetPickerView: View {
-    @ObservedObject var petManager: PetManager
-    let onBack: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // Header
-            Button(action: onBack) {
-                HStack(spacing: 6) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 13, weight: .semibold))
-                    Text("뒤로")
-                        .font(.system(size: 15, weight: .semibold))
-                }
-                .foregroundColor(.primary)
-            }
-            .buttonStyle(.plain)
-            .padding(.horizontal, 14)
-            .padding(.top, 14)
-            .padding(.bottom, 10)
-
-            // Section header
-            Text("기본 말랑이")
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .padding(.horizontal, 14)
-                .padding(.bottom, 6)
-
-            // List
-            VStack(spacing: 0) {
-                ForEach(Array(PetType.allCases.enumerated()), id: \.element.id) { index, type in
-                    petRow(type)
-                    if index < PetType.allCases.count - 1 {
-                        Divider().padding(.leading, 30)
-                    }
-                }
-            }
-            .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 10))
-            .padding(.horizontal, 14)
-
-            Spacer(minLength: 14)
-        }
-    }
-
-    @ViewBuilder
-    private func petRow(_ type: PetType) -> some View {
-        let isSelected = petManager.petType == type
-        Button { petManager.petType = type } label: {
-            HStack(spacing: 10) {
-                Circle()
-                    .fill(isSelected ? Color.accentColor : Color.clear)
-                    .frame(width: 8, height: 8)
-
-                Text(type.displayName)
-                    .font(.system(size: 13))
-                    .foregroundColor(.primary)
-
-                Spacer()
-
-                // Stage preview: show all 5 stages small
-                HStack(spacing: 1) {
-                    ForEach(Array(type.stages.enumerated()), id: \.offset) { _, emoji in
-                        Text(emoji).font(.system(size: 13))
-                    }
-                }
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-    }
-}
-
 // MARK: - Pet Tab View
 
 private struct PetTabView: View {
     @ObservedObject var petManager: PetManager
+    
+    private let previewOptions: [PetPreviewOption] = [
+        .init(
+            name: "물범 말랑이",
+            subtitle: "현재 사용 중",
+            assetName: "pet_preview_seal",
+            accent: Color(red: 0.84, green: 0.92, blue: 1.0),
+            status: .active
+        ),
+        .init(
+            name: "햄말랑",
+            subtitle: "예시 캐릭터",
+            assetName: "pet_preview_hamster",
+            accent: Color(red: 0.99, green: 0.9, blue: 0.76),
+            status: .preview
+        ),
+        .init(
+            name: "토끼 말랑이",
+            subtitle: "예시 캐릭터",
+            assetName: "pet_preview_bunny",
+            accent: Color(red: 0.96, green: 0.93, blue: 1.0),
+            status: .preview
+        ),
+        .init(
+            name: "병아리 말랑이",
+            subtitle: "예시 캐릭터",
+            assetName: "pet_preview_chick",
+            accent: Color(red: 1.0, green: 0.95, blue: 0.76),
+            status: .preview
+        )
+    ]
 
     var body: some View {
         VStack(spacing: 0) {
@@ -359,6 +296,28 @@ private struct PetTabView: View {
                 .padding(.vertical, 10)
                 .padding(.horizontal, 14)
 
+            VStack(alignment: .leading, spacing: 10) {
+                Text("캐릭터")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+
+                Text("현재는 물범 말랑이가 실제 펫으로 적용되어 있고, 아래 3종은 다음 캐릭터 예시예요.")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                    ForEach(previewOptions) { option in
+                        PetPreviewCard(option: option)
+                    }
+                }
+            }
+            .padding(.horizontal, 14)
+
+            Divider()
+                .padding(.vertical, 10)
+                .padding(.horizontal, 14)
+
             // Stats
             VStack(spacing: 6) {
                 statRow(icon: "✨", label: "오늘", value: "\(petManager.todayTokens.formatted()) tokens")
@@ -392,5 +351,76 @@ private struct PetTabView: View {
         case 0.6..<0.8: .orange
         default: .red
         }
+    }
+}
+
+private struct PetPreviewOption: Identifiable {
+    enum Status {
+        case active
+        case preview
+
+        var label: String {
+            switch self {
+            case .active: "현재"
+            case .preview: "예시"
+            }
+        }
+    }
+
+    let id = UUID()
+    let name: String
+    let subtitle: String
+    let assetName: String
+    let accent: Color
+    let status: Status
+}
+
+private struct PetPreviewCard: View {
+    let option: PetPreviewOption
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(option.status.label)
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(.secondary)
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 3)
+                    .background(Color.white.opacity(0.78), in: Capsule())
+                Spacer(minLength: 0)
+            }
+
+            Spacer(minLength: 0)
+
+            Image(option.assetName)
+                .interpolation(.none)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 54, height: 54)
+                .frame(maxWidth: .infinity)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(option.name)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(.primary)
+                Text(option.subtitle)
+                    .font(.system(size: 10))
+                    .foregroundColor(.secondary)
+            }
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, minHeight: 122, alignment: .topLeading)
+        .background(
+            LinearGradient(
+                colors: [option.accent, Color.white.opacity(0.72)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            ),
+            in: RoundedRectangle(cornerRadius: 12)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(option.status == .active ? Color.primary.opacity(0.18) : Color.primary.opacity(0.08), lineWidth: 1)
+        )
     }
 }

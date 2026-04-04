@@ -1,0 +1,13 @@
+{
+  "images" : [
+    {
+      "filename" : "pet_preview_bunny.png",
+      "idiom" : "universal",
+      "scale" : "1x"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
