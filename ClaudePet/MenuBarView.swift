@@ -19,7 +19,7 @@ struct MenuBarView: View {
                 if mode == .imageOnly || mode == .both {
                     AnimatedPetView(
                         stage: petManager.petLevel,
-                        size: 20,
+                        size: 30,
                         fps: 8,
                         fallbackEmoji: petManager.emoji,
                         useTemplateRendering: true
