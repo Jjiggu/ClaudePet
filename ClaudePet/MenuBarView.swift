@@ -1,0 +1,34 @@
+//
+//  MenuBarView.swift
+//  ClaudePet
+//
+//  Status bar label: animated pixel-art pet + session %
+//  Animation speed scales with session usage (RunCat style).
+
+import SwiftUI
+
+struct MenuBarView: View {
+    @ObservedObject var petManager: PetManager
+
+    var body: some View {
+        HStack(spacing: 4) {
+            if petManager.errorMessage != nil {
+                Text("⚠️").font(.system(size: 13))
+            } else {
+                let mode = petManager.menuBarDisplayMode
+                if mode == .imageOnly || mode == .both {
+                    AnimatedPetView(
+                        stage: petManager.petLevel,
+                        size: 18,
+                        fps: 8,
+                        fallbackEmoji: petManager.emoji
+                    )
+                }
+                if (mode == .usageOnly || mode == .both), let session = petManager.fiveHour {
+                    Text("\(Int(session.utilization))%")
+                        .font(.system(size: 11))
+                }
+            }
+        }
+    }
+}

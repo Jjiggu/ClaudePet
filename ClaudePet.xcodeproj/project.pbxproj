@@ -3,23 +3,39 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 56;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		BB000001000000000000001A /* ClaudePetApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001000000000000001A /* ClaudePetApp.swift */; };
+		BB000002000000000000001A /* AuthLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000001A /* AuthLoader.swift */; };
+		BB000003000000000000001A /* PetManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000003000000000000001A /* PetManager.swift */; };
+		BB000004000000000000001A /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000004000000000000001A /* MenuBarView.swift */; };
+		BB000005000000000000001A /* PopoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000005000000000000001A /* PopoverView.swift */; };
+		BB000006000000000000001A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA000006000000000000001A /* Assets.xcassets */; };
+		BB000008000000000000001A /* JournalLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000008000000000000001A /* JournalLoader.swift */; };
+		BB000009000000000000001A /* AnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000009000000000000001A /* AnalyticsView.swift */; };
+		BB00000A000000000000001A /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000A000000000000001A /* SettingsView.swift */; };
+		BB00000B000000000000001A /* AnimatedPetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000B000000000000001A /* AnimatedPetView.swift */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
-		78C636292F7EA3C60083578A /* ClaudePet.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ClaudePet.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		83CBB9F51A601CBA00E9B192 /* ClaudePet.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ClaudePet.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA000001000000000000001A /* ClaudePetApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudePetApp.swift; sourceTree = "<group>"; };
+		AA000002000000000000001A /* AuthLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthLoader.swift; sourceTree = "<group>"; };
+		AA000003000000000000001A /* PetManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PetManager.swift; sourceTree = "<group>"; };
+		AA000004000000000000001A /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
+		AA000005000000000000001A /* PopoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopoverView.swift; sourceTree = "<group>"; };
+		AA000006000000000000001A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		AA000007000000000000001A /* ClaudePet.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ClaudePet.entitlements; sourceTree = "<group>"; };
+		AA000008000000000000001A /* JournalLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JournalLoader.swift; sourceTree = "<group>"; };
+		AA000009000000000000001A /* AnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsView.swift; sourceTree = "<group>"; };
+		AA00000A000000000000001A /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		AA00000B000000000000001A /* AnimatedPetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimatedPetView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedRootGroup section */
-		78C6362B2F7EA3C60083578A /* ClaudePet */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = ClaudePet;
-			sourceTree = "<group>";
-		};
-/* End PBXFileSystemSynchronizedRootGroup section */
-
 /* Begin PBXFrameworksBuildPhase section */
-		78C636262F7EA3C60083578A /* Frameworks */ = {
+		83CBBA001A601CBA00E9B192 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -29,103 +45,125 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		78C636202F7EA3C60083578A = {
+		83CBB9F21A601CBA00E9B192 /* ClaudePet */ = {
 			isa = PBXGroup;
 			children = (
-				78C6362B2F7EA3C60083578A /* ClaudePet */,
-				78C6362A2F7EA3C60083578A /* Products */,
+				AA000001000000000000001A /* ClaudePetApp.swift */,
+				AA000002000000000000001A /* AuthLoader.swift */,
+				AA000003000000000000001A /* PetManager.swift */,
+				AA000004000000000000001A /* MenuBarView.swift */,
+				AA000005000000000000001A /* PopoverView.swift */,
+				AA000006000000000000001A /* Assets.xcassets */,
+				AA000007000000000000001A /* ClaudePet.entitlements */,
+				AA000008000000000000001A /* JournalLoader.swift */,
+				AA000009000000000000001A /* AnalyticsView.swift */,
+				AA00000A000000000000001A /* SettingsView.swift */,
+				AA00000B000000000000001A /* AnimatedPetView.swift */,
 			);
+			path = ClaudePet;
 			sourceTree = "<group>";
 		};
-		78C6362A2F7EA3C60083578A /* Products */ = {
+		83CBB9F31A601CBA00E9B192 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				78C636292F7EA3C60083578A /* ClaudePet.app */,
+				83CBB9F51A601CBA00E9B192 /* ClaudePet.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		CC000000000000000000001A = {
+			isa = PBXGroup;
+			children = (
+				83CBB9F21A601CBA00E9B192 /* ClaudePet */,
+				83CBB9F31A601CBA00E9B192 /* Products */,
+			);
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		78C636282F7EA3C60083578A /* ClaudePet */ = {
+		83CBB9F61A601CBA00E9B192 /* ClaudePet */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 78C636342F7EA3C80083578A /* Build configuration list for PBXNativeTarget "ClaudePet" */;
+			buildConfigurationList = 83CBB9F91A601CBA00E9B192 /* Build configuration list for PBXNativeTarget "ClaudePet" */;
 			buildPhases = (
-				78C636252F7EA3C60083578A /* Sources */,
-				78C636262F7EA3C60083578A /* Frameworks */,
-				78C636272F7EA3C60083578A /* Resources */,
+				83CBBA001A601CBA00E9B192 /* Frameworks */,
+				83CBB9FE1A601CBA00E9B192 /* Sources */,
+				83CBB9FF1A601CBA00E9B192 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
-			fileSystemSynchronizedGroups = (
-				78C6362B2F7EA3C60083578A /* ClaudePet */,
-			);
 			name = ClaudePet;
-			packageProductDependencies = (
-			);
 			productName = ClaudePet;
-			productReference = 78C636292F7EA3C60083578A /* ClaudePet.app */;
+			productReference = 83CBB9F51A601CBA00E9B192 /* ClaudePet.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		78C636212F7EA3C60083578A /* Project object */ = {
+		83CBB9F71A601CBA00E9B192 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 2630;
+				LastSwiftUpdateCheck = 1500;
 				LastUpgradeCheck = 2630;
 				TargetAttributes = {
-					78C636282F7EA3C60083578A = {
-						CreatedOnToolsVersion = 26.3;
+					83CBB9F61A601CBA00E9B192 = {
+						CreatedOnToolsVersion = 15.0;
 					};
 				};
 			};
-			buildConfigurationList = 78C636242F7EA3C60083578A /* Build configuration list for PBXProject "ClaudePet" */;
+			buildConfigurationList = 83CBB9F81A601CBA00E9B192 /* Build configuration list for PBXProject "ClaudePet" */;
+			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
 				Base,
 			);
-			mainGroup = 78C636202F7EA3C60083578A;
-			minimizedProjectReferenceProxies = 1;
-			preferredProjectObjectVersion = 77;
-			productRefGroup = 78C6362A2F7EA3C60083578A /* Products */;
+			mainGroup = CC000000000000000000001A;
+			productRefGroup = 83CBB9F31A601CBA00E9B192 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				78C636282F7EA3C60083578A /* ClaudePet */,
+				83CBB9F61A601CBA00E9B192 /* ClaudePet */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		78C636272F7EA3C60083578A /* Resources */ = {
+		83CBB9FF1A601CBA00E9B192 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BB000006000000000000001A /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		78C636252F7EA3C60083578A /* Sources */ = {
+		83CBB9FE1A601CBA00E9B192 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BB000001000000000000001A /* ClaudePetApp.swift in Sources */,
+				BB000002000000000000001A /* AuthLoader.swift in Sources */,
+				BB000003000000000000001A /* PetManager.swift in Sources */,
+				BB000004000000000000001A /* MenuBarView.swift in Sources */,
+				BB000005000000000000001A /* PopoverView.swift in Sources */,
+				BB000008000000000000001A /* JournalLoader.swift in Sources */,
+				BB000009000000000000001A /* AnalyticsView.swift in Sources */,
+				BB00000A000000000000001A /* SettingsView.swift in Sources */,
+				BB00000B000000000000001A /* AnimatedPetView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		78C636322F7EA3C80083578A /* Debug */ = {
+		83CBB9FA1A601CBA00E9B192 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -159,6 +197,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -177,16 +216,18 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
 			name = Debug;
 		};
-		78C636332F7EA3C80083578A /* Release */ = {
+		83CBB9FB1A601CBA00E9B192 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -220,6 +261,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -232,119 +274,88 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MTL_ENABLE_DEBUG_INFO = NO;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 			};
 			name = Release;
 		};
-		78C636352F7EA3C80083578A /* Debug */ = {
+		83CBB9FC1A601CBA00E9B192 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = ClaudePet/ClaudePet.entitlements;
 				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				ENABLE_APP_SANDBOX = YES;
-				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SELECTED_FILES = readonly;
+				DEAD_CODE_STRIPPING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
-				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
-				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
-				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 15.6;
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSHumanReadableDescription = "Monitor Claude token usage in your menu bar";
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = hoon.ClaudePet;
+				PRODUCT_BUNDLE_IDENTIFIER = com.hoon.ClaudePet;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				REGISTER_APP_GROUPS = YES;
-				SDKROOT = auto;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
-				XROS_DEPLOYMENT_TARGET = 26.2;
 			};
 			name = Debug;
 		};
-		78C636362F7EA3C80083578A /* Release */ = {
+		83CBB9FD1A601CBA00E9B192 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = ClaudePet/ClaudePet.entitlements;
 				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				ENABLE_APP_SANDBOX = YES;
-				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SELECTED_FILES = readonly;
+				DEAD_CODE_STRIPPING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
-				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
-				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
-				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 15.6;
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSHumanReadableDescription = "Monitor Claude token usage in your menu bar";
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = hoon.ClaudePet;
+				PRODUCT_BUNDLE_IDENTIFIER = com.hoon.ClaudePet;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				REGISTER_APP_GROUPS = YES;
-				SDKROOT = auto;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
-				XROS_DEPLOYMENT_TARGET = 26.2;
 			};
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		78C636242F7EA3C60083578A /* Build configuration list for PBXProject "ClaudePet" */ = {
+		83CBB9F81A601CBA00E9B192 /* Build configuration list for PBXProject "ClaudePet" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				78C636322F7EA3C80083578A /* Debug */,
-				78C636332F7EA3C80083578A /* Release */,
+				83CBB9FA1A601CBA00E9B192 /* Debug */,
+				83CBB9FB1A601CBA00E9B192 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		78C636342F7EA3C80083578A /* Build configuration list for PBXNativeTarget "ClaudePet" */ = {
+		83CBB9F91A601CBA00E9B192 /* Build configuration list for PBXNativeTarget "ClaudePet" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				78C636352F7EA3C80083578A /* Debug */,
-				78C636362F7EA3C80083578A /* Release */,
+				83CBB9FC1A601CBA00E9B192 /* Debug */,
+				83CBB9FD1A601CBA00E9B192 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
-	rootObject = 78C636212F7EA3C60083578A /* Project object */;
+	rootObject = 83CBB9F71A601CBA00E9B192 /* Project object */;
 }
