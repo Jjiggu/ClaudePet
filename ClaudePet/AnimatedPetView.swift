@@ -18,13 +18,13 @@ struct AnimatedPetView: View {
     let fps: Double             // animation speed
     let fallbackEmoji: String
     var assetPrefix: String? = nil  // nil = default "pet_stage{N}", set to override
+    var useTemplateRendering: Bool = false
 
     /// Frame counts keyed by asset prefix. Default stages use index-based lookup.
     private static let defaultFrameCounts = [0, 8, 4, 4, 4, 4]
     private static let largeStageCounts: [String: Int] = [
         "pet_stage1_large": 9
     ]
-
     @State private var frameIndex = 0
 
     private var resolvedPrefix: String? {
@@ -41,8 +41,8 @@ struct AnimatedPetView: View {
 
     private func frameCount(for prefix: String) -> Int {
         if let n = Self.largeStageCounts[prefix] { return n }
-        // default stage prefix: "pet_stage{N}" → extract N
-        if let last = prefix.split(separator: "_").last, let n = Int(last) {
+        let digits = prefix.reversed().prefix { $0.isNumber }.reversed()
+        if let n = Int(String(digits)) {
             return Self.defaultFrameCounts[min(n, Self.defaultFrameCounts.count - 1)]
         }
         return 0
@@ -50,18 +50,30 @@ struct AnimatedPetView: View {
 
     var body: some View {
         if let prefix = resolvedPrefix {
-            Image("\(prefix)_\(frameIndex)")
-                .interpolation(.none)
-                .resizable()
-                .frame(width: size, height: size)
-                .task(id: "\(fps)-\(prefix)") {
-                    let count = frameCount(for: prefix)
-                    guard count > 0 else { return }
-                    while !Task.isCancelled {
-                        try? await Task.sleep(for: .seconds(1.0 / fps))
-                        frameIndex = (frameIndex + 1) % count
-                    }
+            let count = frameCount(for: prefix)
+            Group {
+                if useTemplateRendering {
+                    Image("\(prefix)_\(frameIndex)")
+                        .renderingMode(.template)
+                        .foregroundStyle(.primary)
+                } else {
+                    Image("\(prefix)_\(frameIndex)")
                 }
+            }
+            .interpolation(.none)
+            .resizable()
+            .frame(width: size, height: size)
+            .task(id: "\(prefix)-\(fps)-\(count)") {
+                guard count > 0 else {
+                    frameIndex = 0
+                    return
+                }
+                frameIndex = 0
+                while !Task.isCancelled {
+                    try? await Task.sleep(for: .seconds(1.0 / fps))
+                    frameIndex = (frameIndex + 1) % count
+                }
+            }
         } else {
             Text(fallbackEmoji)
                 .font(.system(size: size * 0.75))
