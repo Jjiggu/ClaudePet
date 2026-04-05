@@ -225,6 +225,13 @@ final class PetManager: ObservableObject {
         }
     }
 
+    var petTabStillImageName: String? {
+        switch petType {
+        case .seal: nil
+        case .cat: "pet_cat_large_0"
+        }
+    }
+
     // MARK: - Pet Level (monthly JSONL tokens, resets on the 1st)
 
     /// Level 1–5 based on this month's token usage
