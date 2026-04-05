@@ -116,8 +116,10 @@ struct SettingsView: View {
         let mode = petManager.menuBarDisplayMode
         HStack(spacing: 4) {
             if mode == .imageOnly || mode == .both {
-                Text(petManager.emoji)
-                    .font(.system(size: 13))
+                Image("pet_stage1_0")
+                    .interpolation(.none)
+                    .resizable()
+                    .frame(width: 22, height: 22)
             }
             if mode == .usageOnly || mode == .both {
                 Text(petManager.fiveHour.map { "\(Int($0.utilization))%" } ?? "0%")
