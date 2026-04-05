@@ -164,6 +164,9 @@ final class PetManager: ObservableObject {
     @Published var dailyUsage: [Date: Int] = [:]
     @Published var isLoadingJournal = false
     @Published var monthlyTokens: Int = 0
+    /// Frame index for menu bar animation — driven by a dedicated 8fps task so it
+    /// works reliably in MenuBarExtra label where .task lifecycle is unreliable.
+    @Published var menuBarFrame: Int = 0
 
     @Published var petType: PetType {
         didSet { UserDefaults.standard.set(petType.rawValue, forKey: "selectedPetType") }
@@ -280,6 +283,7 @@ final class PetManager: ObservableObject {
     }
 
     private var pollTask: Task<Void, Never>?
+    private var menuBarAnimTask: Task<Void, Never>?
     private var isFetching = false              // guard against concurrent fetches
     private var didSendThresholdAlert = false
     private var rateLimitBackoff: Double = 60   // seconds; doubles on each 429, resets on success
@@ -300,10 +304,14 @@ final class PetManager: ObservableObject {
         notificationThreshold = UserDefaults.standard.object(forKey: "notificationThreshold") as? Double ?? 0.8
         isInitialized = true
         startPolling()
+        startMenuBarAnimation()
         loadJournal()
     }
 
-    deinit { pollTask?.cancel() }
+    deinit {
+        pollTask?.cancel()
+        menuBarAnimTask?.cancel()
+    }
 
     func loadJournal() {
         isLoadingJournal = true
@@ -315,6 +323,22 @@ final class PetManager: ObservableObject {
             dailyUsage    = usage
             monthlyTokens = monthly
             isLoadingJournal = false
+        }
+    }
+
+    // MARK: - Menu Bar Animation
+
+    /// Drives menuBarFrame at 8fps independently of the view lifecycle,
+    /// so animation works in MenuBarExtra label where .task is unreliable.
+    private func startMenuBarAnimation() {
+        // Frame count mirrors AnimatedPetView.defaultFrameCounts[1]
+        let frameCount = 5
+        menuBarAnimTask?.cancel()
+        menuBarAnimTask = Task {
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(1.0 / 8.0))
+                menuBarFrame = (menuBarFrame + 1) % frameCount
+            }
         }
     }
 

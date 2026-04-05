@@ -17,13 +17,15 @@ struct MenuBarView: View {
             } else {
                 let mode = petManager.menuBarDisplayMode
                 if mode == .imageOnly || mode == .both {
-                    AnimatedPetView(
-                        stage: petManager.petLevel,
-                        size: 30,
-                        fps: 8,
-                        fallbackEmoji: petManager.emoji,
-                        useTemplateRendering: true
-                    )
+                    let name = "pet_stage1_\(petManager.menuBarFrame)"
+                    if NSImage(named: name) != nil {
+                        Image(name)
+                            .interpolation(.none)
+                            .resizable()
+                            .frame(width: 22, height: 22)
+                    } else {
+                        Text(petManager.emoji).font(.system(size: 14))
+                    }
                 }
                 if (mode == .usageOnly || mode == .both), let session = petManager.fiveHour {
                     Text("\(Int(session.utilization))%")
