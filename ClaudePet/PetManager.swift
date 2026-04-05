@@ -21,26 +21,23 @@ import UserNotifications
 // MARK: - Pet Type
 
 enum PetType: String, CaseIterable, Identifiable {
-    case chick  = "chick"
+    case seal   = "seal"
     case cat    = "cat"
-    case dragon = "dragon"
 
     var id: String { rawValue }
 
     var displayName: String {
         switch self {
-        case .chick:  "노랑 말랑이"
+        case .seal:   "물범 말랑이"
         case .cat:    "고양 말랑이"
-        case .dragon: "용 말랑이"
         }
     }
 
     /// 5 stages: 0–20 / 20–40 / 40–60 / 60–80 / 80–100%
     var stages: [String] {
         switch self {
-        case .chick:  ["🥚", "🐣", "🐥", "🐓", "🔥"]
+        case .seal:   ["🫧", "🦭", "🦭", "🦭", "🌊"]
         case .cat:    ["😴", "🐱", "😸", "😻", "🙀"]
-        case .dragon: ["🥚", "🐍", "🦎", "🐉", "🔥"]
         }
     }
 
@@ -213,6 +210,20 @@ final class PetManager: ObservableObject {
 
     /// Current emoji based on stage + selected pet type
     var emoji: String { petType.emoji(for: stage) }
+    
+    var menuBarAssetPrefix: String? {
+        switch petType {
+        case .seal: "pet_stage1"
+        case .cat: "pet_cat_menu"
+        }
+    }
+    
+    var petTabAssetPrefix: String? {
+        switch petType {
+        case .seal: "pet_stage1_large"
+        case .cat: "pet_cat_large"
+        }
+    }
 
     // MARK: - Pet Level (monthly JSONL tokens, resets on the 1st)
 
@@ -291,7 +302,7 @@ final class PetManager: ObservableObject {
 
     init() {
         let saved = UserDefaults.standard.string(forKey: "selectedPetType") ?? ""
-        petType = PetType(rawValue: saved) ?? .chick
+        petType = PetType(rawValue: saved) ?? .seal
         let savedMode = UserDefaults.standard.string(forKey: "menuBarDisplayMode") ?? ""
         menuBarDisplayMode = MenuBarDisplayMode(rawValue: savedMode) ?? .both
         // NOTE: @Published didSet fires during init — isInitialized flag prevents
