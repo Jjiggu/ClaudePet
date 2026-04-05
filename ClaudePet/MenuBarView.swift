@@ -22,6 +22,7 @@ struct MenuBarView: View {
                         size: 30,
                         fps: 8,
                         fallbackEmoji: petManager.emoji,
+                        assetPrefix: petManager.menuBarAssetPrefix,
                         useTemplateRendering: true
                     )
                 }

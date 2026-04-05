@@ -23,7 +23,9 @@ struct AnimatedPetView: View {
     /// Frame counts keyed by asset prefix. Default stages use index-based lookup.
     private static let defaultFrameCounts = [0, 5, 4, 4, 4, 4]
     private static let largeStageCounts: [String: Int] = [
-        "pet_stage1_large": 9
+        "pet_stage1_large": 9,
+        "pet_cat_menu": 1,
+        "pet_cat_large": 1
     ]
     @State private var frameIndex = 0
 
