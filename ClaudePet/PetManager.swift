@@ -125,7 +125,8 @@ enum SessionMood {
 struct UsageQuota: Decodable {
     /// 0–100 percent
     let utilization: Double
-    let resetsAt: Date
+    /// nil when API omits or nulls the field (e.g. immediately after a reset)
+    let resetsAt: Date?
 
     /// 0.0–1.0 for progress bars / stage logic
     var percent: Double { min(utilization / 100.0, 1.0) }
@@ -367,8 +368,10 @@ final class PetManager: ObservableObject {
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue("oauth-2025-04-20", forHTTPHeaderField: "anthropic-beta")
 
+        var responseData: Data?
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
+            responseData = data
 
             guard let http = response as? HTTPURLResponse else {
                 throw URLError(.badServerResponse)
@@ -399,9 +402,13 @@ final class PetManager: ObservableObject {
                 errorMessage = "API error \(http.statusCode)"
             }
         } catch let error as DecodingError {
-            // JSON shape mismatch — log and surface clearly
+            // JSON shape mismatch — log raw body and surface clearly
             errorMessage = "Unexpected API response.\nCheck app update."
             print("[ClaudePet] Decode error: \(error)")
+            if let data = responseData,
+               let raw = try? JSONSerialization.jsonObject(with: data) {
+                print("[ClaudePet] Raw body: \(raw)")
+            }
         } catch {
             errorMessage = error.localizedDescription
         }
