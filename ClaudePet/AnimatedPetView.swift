@@ -20,48 +20,52 @@ struct AnimatedPetView: View {
     var assetPrefix: String? = nil  // nil = default "pet_stage{N}", set to override
     var useTemplateRendering: Bool = false
 
-    /// Frame counts keyed by asset prefix. Default stages use index-based lookup.
-    private static let defaultFrameCounts = [0, 5, 4, 4, 4, 4]
-    private static let largeStageCounts: [String: Int] = [
-        "pet_stage1_large": 9,
-        "pet_cat_menu": 1,
-        "pet_cat_large": 1
-    ]
     @State private var frameIndex = 0
 
-    private var resolvedPrefix: String? {
+    private var resolvedFrames: [String]? {
         if let prefix = assetPrefix {
-            // custom prefix: check frame 0 exists
-            return NSImage(named: "\(prefix)_0") != nil ? prefix : nil
+            let frames = availableFrames(for: prefix)
+            return frames.isEmpty ? nil : frames
         }
-        // default: walk down from stage to find highest with assets
+
         for s in stride(from: stage, through: 1, by: -1) {
-            if NSImage(named: "pet_stage\(s)_0") != nil { return "pet_stage\(s)" }
+            let frames = availableFrames(for: "pet_stage\(s)")
+            if !frames.isEmpty { return frames }
         }
+
         return nil
     }
 
-    private func frameCount(for prefix: String) -> Int {
-        if let n = Self.largeStageCounts[prefix] { return n }
-        let digits = prefix.reversed().prefix { $0.isNumber }.reversed()
-        if let n = Int(String(digits)) {
-            return Self.defaultFrameCounts[min(n, Self.defaultFrameCounts.count - 1)]
+    private func availableFrames(for prefix: String) -> [String] {
+        if NSImage(named: prefix) != nil {
+            return [prefix]
         }
-        return 0
+
+        var frames: [String] = []
+        var index = 0
+
+        while NSImage(named: "\(prefix)_\(index)") != nil {
+            frames.append("\(prefix)_\(index)")
+            index += 1
+        }
+
+        return frames
     }
 
     var body: some View {
-        if let prefix = resolvedPrefix {
-            let count = frameCount(for: prefix)
+        if let frames = resolvedFrames {
+            let count = frames.count
+            let currentFrame = frames[min(frameIndex, count - 1)]
+
             Group {
                 if useTemplateRendering {
-                    frameImage(prefix: prefix)
+                    frameImage(named: currentFrame)
                         .foregroundStyle(.primary)
                 } else {
-                    frameImage(prefix: prefix)
+                    frameImage(named: currentFrame)
                 }
             }
-            .task(id: "\(prefix)-\(fps)-\(count)") {
+            .task(id: "\(frames.first ?? "missing")-\(fps)-\(count)") {
                 await runAnimation(frameCount: count)
             }
         } else {
@@ -71,8 +75,8 @@ struct AnimatedPetView: View {
         }
     }
 
-    private func frameImage(prefix: String) -> some View {
-        Image("\(prefix)_\(frameIndex)")
+    private func frameImage(named assetName: String) -> some View {
+        Image(assetName)
             .renderingMode(useTemplateRendering ? .template : .original)
             .interpolation(.none)
             .resizable()
