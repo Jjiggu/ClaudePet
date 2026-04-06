@@ -10,6 +10,18 @@ import SwiftUI
 struct MenuBarView: View {
     @ObservedObject var petManager: PetManager
 
+    private var statusSummary: String {
+        if let errorMessage = petManager.errorMessage {
+            return errorMessage.replacingOccurrences(of: "\n", with: " ")
+        }
+
+        if let session = petManager.fiveHour {
+            return "\(petManager.petType.displayName), session usage \(Int(session.utilization))%"
+        }
+
+        return "Checking Claude usage"
+    }
+
     var body: some View {
         HStack(spacing: 4) {
             if petManager.errorMessage != nil {
@@ -32,5 +44,8 @@ struct MenuBarView: View {
                 }
             }
         }
+        .help(statusSummary)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(statusSummary)
     }
 }
