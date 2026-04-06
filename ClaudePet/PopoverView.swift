@@ -272,23 +272,14 @@ private struct PetTabView: View {
         VStack(spacing: 0) {
             // Pet display area
             VStack(spacing: 8) {
-                if let stillImageName = petManager.petTabStillImageName {
-                    Image(stillImageName)
-                        .interpolation(.none)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 96, height: 96)
-                        .padding(.top, 16)
-                } else {
-                    AnimatedPetView(
-                        stage: petManager.petLevel,
-                        size: 96,
-                        fps: petManager.animationFPS,
-                        fallbackEmoji: petManager.emoji,
-                        assetPrefix: petManager.petTabAssetPrefix
-                    )
-                    .padding(.top, 16)
-                }
+                AnimatedPetView(
+                    stage: petManager.petLevel,
+                    size: 96,
+                    fps: petManager.animationFPS,
+                    fallbackEmoji: petManager.emoji,
+                    assetPrefix: petManager.petTabAssetPrefix
+                )
+                .padding(.top, 16)
 
                 // 무드 뱃지 + 대사
                 Text(petManager.sessionMood.badge)

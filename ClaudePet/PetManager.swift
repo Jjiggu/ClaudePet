@@ -250,8 +250,6 @@ final class PetManager: ObservableObject {
         }
     }
 
-    var petTabStillImageName: String? { nil }
-
     // MARK: - Pet Level (monthly JSONL tokens, resets on the 1st)
 
     /// Level 1–5 based on this month's token usage
@@ -291,13 +289,9 @@ final class PetManager: ObservableObject {
 
     /// Yesterday's token count from JSONL
     var yesterdayTokens: Int {
-        let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Calendar.current.startOfDay(for: Date()))!
+        let today = Calendar.current.startOfDay(for: Date())
+        guard let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: today) else { return 0 }
         return dailyUsage[yesterday] ?? 0
-    }
-
-    /// Status message based on current session utilization
-    var petStatusMessage: String {
-        sessionMood.headline
     }
 
     var sessionMood: SessionMood {
