@@ -11,7 +11,7 @@ struct SettingsView: View {
     let onBack: () -> Void
 
     private let intervalOptions: [(label: String, seconds: Int)] = [
-        ("Off", 0), ("1분", 60), ("2분", 120), ("5분", 300), ("10분", 600)
+        ("Off", 0), ("1m", 60), ("2m", 120), ("5m", 300), ("10m", 600)
     ]
 
     var body: some View {
@@ -22,17 +22,16 @@ struct SettingsView: View {
                     HStack(spacing: 4) {
                         Image(systemName: "chevron.left")
                             .font(.system(size: 12, weight: .medium))
-                        Text("뒤로").font(.system(size: 13))
+                        Text("Back").font(.system(size: 13))
                     }
                     .foregroundColor(.primary)
                 }
                 .buttonStyle(.plain)
                 Spacer()
-                Text("설정")
+                Text("Settings")
                     .font(.system(size: 13, weight: .semibold))
                 Spacer()
-                // Invisible balance for centering
-                Text("뒤로").font(.system(size: 13)).opacity(0)
+                Text("Back").font(.system(size: 13)).opacity(0)
             }
             .padding(.horizontal, 14)
             .padding(.top, 12)
@@ -57,7 +56,7 @@ struct SettingsView: View {
 
     private var authSection: some View {
         settingsCard {
-            Text("인증")
+            Text("Authentication")
                 .font(.caption)
                 .fontWeight(.semibold)
                 .foregroundColor(.secondary)
@@ -67,7 +66,7 @@ struct SettingsView: View {
                     Circle()
                         .fill(petManager.isAuthenticated ? Color.green : Color.red)
                         .frame(width: 7, height: 7)
-                    Text(petManager.isAuthenticated ? "연결됨" : "연결 안 됨")
+                    Text(petManager.isAuthenticated ? "Connected" : "Not connected")
                         .font(.caption)
                 }
                 .padding(.horizontal, 8)
@@ -82,7 +81,7 @@ struct SettingsView: View {
             }
 
             if !petManager.isAuthenticated {
-                Text("터미널에서 `claude login`을 실행하세요.")
+                Text("Run `claude login` in Terminal.")
                     .font(.caption2)
                     .foregroundColor(.orange)
             }
@@ -138,7 +137,7 @@ struct SettingsView: View {
 
     private var refreshSection: some View {
         settingsCard {
-            Text("자동 새로고침")
+            Text("Auto Refresh")
                 .font(.caption)
                 .fontWeight(.semibold)
                 .foregroundColor(.secondary)
@@ -157,13 +156,13 @@ struct SettingsView: View {
 
     private var notificationSection: some View {
         settingsCard {
-            Text("알림")
+            Text("Notifications")
                 .font(.caption)
                 .fontWeight(.semibold)
                 .foregroundColor(.secondary)
 
             Toggle(isOn: $petManager.notificationsEnabled) {
-                Text("사용량 경고 알림")
+                Text("Usage alert")
                     .font(.caption)
             }
             .toggleStyle(.switch)
@@ -171,11 +170,11 @@ struct SettingsView: View {
             if petManager.notificationsEnabled {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
-                        Text("경고 기준: \(Int(petManager.notificationThreshold * 100))% 이상")
+                        Text("Alert at \(Int(petManager.notificationThreshold * 100))%+")
                             .font(.caption2)
                             .foregroundColor(.secondary)
                         Spacer()
-                        Text("(\(Int((1 - petManager.notificationThreshold) * 100))% 남음)")
+                        Text("\(Int((1 - petManager.notificationThreshold) * 100))% left")
                             .font(.caption2)
                             .foregroundColor(.secondary)
                     }

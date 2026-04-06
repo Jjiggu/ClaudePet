@@ -39,64 +39,151 @@ struct PopoverView: View {
                 VStack(spacing: 0) {
                     tabBar
                     Divider()
-                    if tab == .usage {
-                        MainView(petManager: petManager)
-                    } else if tab == .analytics {
-                        AnalyticsView(
-                            dailyUsage: petManager.dailyUsage,
-                            isLoading: petManager.isLoadingJournal
-                        )
-                        .padding(14)
-                    } else {
-                        PetTabView(petManager: petManager) {
-                            route = .characterPicker
+
+                    ScrollView {
+                        Group {
+                            if tab == .usage {
+                                MainView(petManager: petManager)
+                            } else if tab == .analytics {
+                                AnalyticsView(
+                                    dailyUsage: petManager.dailyUsage,
+                                    isLoading: petManager.isLoadingJournal
+                                )
+                                .padding(14)
+                            } else {
+                                PetTabView(petManager: petManager) {
+                                    route = .characterPicker
+                                }
+                            }
                         }
+                        .frame(maxWidth: .infinity)
                     }
+                    .frame(height: 360)
+
+                    Divider()
+                    bottomBar
                 }
             }
         }
         .frame(width: 280)
     }
 
+    // MARK: - Tab Bar
+
     private var tabBar: some View {
         HStack(spacing: 0) {
-            tabButton("사용량", tab: .usage,     icon: "chart.bar.fill")
-            tabButton("활동",   tab: .analytics,  icon: "square.grid.3x3.fill")
-            tabButton("펫",     tab: .pet,        icon: "pawprint.fill")
+            tabButton("Usage",  tab: .usage,     icon: "chart.bar.fill")
+            tabButton("Stats",  tab: .analytics, icon: "square.grid.3x3.fill")
+            tabButton("Pet",    tab: .pet,       icon: "pawprint.fill")
             Spacer()
             Button { route = .settings } label: {
                 Image(systemName: "gearshape")
                     .font(.system(size: 13))
                     .foregroundColor(.secondary)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 4)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 6)
             }
             .buttonStyle(.plain)
         }
-        .padding(.horizontal, 14)
-        .padding(.top, 10)
-        .padding(.bottom, 6)
+        .padding(.horizontal, 8)
+        .padding(.top, 8)
     }
 
     private func tabButton(_ label: String, tab t: Tab, icon: String) -> some View {
-        Button { tab = t } label: {
-            HStack(spacing: 4) {
-                Image(systemName: icon)
-                    .font(.system(size: 11))
-                Text(label)
-                    .font(.system(size: 12, weight: .medium))
+        let isSelected = tab == t
+        return Button { tab = t } label: {
+            VStack(spacing: 0) {
+                HStack(spacing: 4) {
+                    Image(systemName: icon)
+                        .font(.system(size: 11))
+                    Text(label)
+                        .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
+                }
+                .foregroundColor(isSelected ? .accentColor : .secondary)
+                .padding(.vertical, 7)
+                .padding(.horizontal, 8)
+
+                Rectangle()
+                    .fill(isSelected ? Color.accentColor : Color.clear)
+                    .frame(height: 2)
+                    .cornerRadius(1)
             }
-            .foregroundColor(tab == t ? .primary : .secondary)
-            .padding(.vertical, 4)
-            .padding(.horizontal, 10)
-            .background(
-                tab == t
-                    ? Color.primary.opacity(0.1)
-                    : Color.clear,
-                in: RoundedRectangle(cornerRadius: 6)
-            )
         }
         .buttonStyle(.plain)
+    }
+
+    // MARK: - Bottom Bar (fixed, all tabs)
+
+    private var bottomBar: some View {
+        HStack(spacing: 10) {
+            // Reset button
+            Button { petManager.refresh() } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "arrow.clockwise")
+                        .rotationEffect(petManager.isLoading ? .degrees(360) : .zero)
+                        .animation(
+                            petManager.isLoading
+                                ? .linear(duration: 1).repeatForever(autoreverses: false)
+                                : .default,
+                            value: petManager.isLoading
+                        )
+                        .font(.system(size: 12, weight: .semibold))
+                    Text("Reset")
+                        .font(.system(size: 11, weight: .semibold))
+                }
+                .foregroundColor(.primary)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(Color.primary.opacity(0.08), in: Capsule())
+            }
+            .buttonStyle(PressableCapsuleButtonStyle())
+            .disabled(petManager.isLoading)
+
+            // Status — right of Reset button
+            refreshStatus
+
+            Spacer()
+
+            Button { NSApplication.shared.terminate(nil) } label: {
+                Image(systemName: "power")
+                    .font(.system(size: 13))
+                    .foregroundColor(.secondary)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(14)
+    }
+
+    @ViewBuilder
+    private var refreshStatus: some View {
+        if petManager.isLoading {
+            HStack(spacing: 5) {
+                ProgressView().controlSize(.small).scaleEffect(0.7)
+                Text("Checking...")
+            }
+            .font(.caption2)
+            .foregroundColor(.secondary)
+        } else if let lastRefreshAt = petManager.lastUsageRefreshAt {
+            TimelineView(.periodic(from: .now, by: 60)) { _ in
+                let seconds = Int(Date().timeIntervalSince(lastRefreshAt))
+                HStack(spacing: 5) {
+                    Circle()
+                        .fill(seconds < 300 ? Color.green : Color.secondary.opacity(0.45))
+                        .frame(width: 5, height: 5)
+                    Text(shortRelativeTime(from: lastRefreshAt))
+                }
+                .font(.caption2)
+                .foregroundColor(.secondary)
+            }
+        }
+    }
+
+    private func shortRelativeTime(from date: Date) -> String {
+        let seconds = Int(Date().timeIntervalSince(date))
+        guard seconds >= 60 else { return "Just now" }
+        let minutes = seconds / 60
+        guard minutes < 60 else { return "\(minutes / 60)h ago" }
+        return "\(minutes) min ago"
     }
 }
 
@@ -107,6 +194,19 @@ private struct MainView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
+            // Plan badge
+            if let plan = petManager.planName {
+                HStack {
+                    Text(plan)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(.accentColor)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(Color.accentColor.opacity(0.1), in: Capsule())
+                    Spacer()
+                }
+            }
+
             if let error = petManager.errorMessage {
                 Text(error)
                     .font(.caption)
@@ -118,81 +218,10 @@ private struct MainView: View {
                 usageRow("Sonnet Weekly", quota: petManager.sevenDaySonnet, color: .orange)
                 usageRow("Opus Weekly",   quota: petManager.sevenDayOpus,   color: .purple)
 
-                if let nextReset = [petManager.fiveHour?.resetsAt,
-                                    petManager.sevenDay?.resetsAt]
-                    .compactMap({ $0 }).min() {
+                if let extra = petManager.extraUsage, extra.isEnabled {
                     Divider()
-                    HStack {
-                        Image(systemName: "clock").foregroundColor(.secondary)
-                        Text("Session resets \(nextReset, style: .relative)")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
+                    extraUsageRow(extra)
                 }
-            }
-
-            Divider()
-
-            // Bottom bar: refresh (left) + quit (right)
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Button { petManager.refresh() } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: "arrow.clockwise")
-                                .rotationEffect(petManager.isLoading ? .degrees(360) : .zero)
-                                .animation(
-                                    petManager.isLoading
-                                        ? .linear(duration: 1).repeatForever(autoreverses: false)
-                                        : .default,
-                                    value: petManager.isLoading
-                                )
-                                .font(.system(size: 12, weight: .semibold))
-
-                            Text(petManager.isLoading ? "새로고침 중" : "새로고침")
-                                .font(.system(size: 11, weight: .semibold))
-                        }
-                        .foregroundColor(petManager.isLoading ? .white : .primary)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(
-                            petManager.isLoading
-                                ? Color.accentColor
-                                : Color.primary.opacity(0.08),
-                            in: Capsule()
-                        )
-                    }
-                    .buttonStyle(PressableCapsuleButtonStyle())
-                    .disabled(petManager.isLoading)
-
-                    Spacer()
-
-                    Button { NSApplication.shared.terminate(nil) } label: {
-                        Image(systemName: "power")
-                            .font(.system(size: 13))
-                            .foregroundColor(.secondary)
-                    }
-                    .buttonStyle(.plain)
-                }
-                
-                HStack(spacing: 6) {
-                    if petManager.isLoading {
-                        ProgressView()
-                            .controlSize(.small)
-                            .scaleEffect(0.65)
-                        Text("최신 사용량을 확인하고 있어요")
-                    } else if let lastRefreshAt = petManager.lastUsageRefreshAt {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(.green)
-                        Text("마지막 업데이트")
-                        Text(lastRefreshAt, style: .relative)
-                    } else {
-                        Image(systemName: "hand.tap")
-                        .foregroundColor(.secondary)
-                        Text("버튼을 눌러 최신 사용량을 가져오세요")
-                    }
-                }
-                .font(.caption2)
-                .foregroundColor(.secondary)
             }
         }
         .padding(14)
@@ -208,6 +237,27 @@ private struct MainView: View {
                     .font(.caption2).foregroundColor(.secondary)
             }
             ProgressView(value: quota?.percent ?? 0).tint(color)
+            if let resetsAt = quota?.resetsAt {
+                Text("Resets \(resetsAt, style: .relative)")
+                    .font(.caption2)
+                    .foregroundColor(.secondary.opacity(0.7))
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func extraUsageRow(_ extra: ExtraUsage) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack {
+                Text("Extra Usage")
+                    .font(.caption).fontWeight(.medium)
+                Spacer()
+                Text(String(format: "%.0f%%", extra.percent * 100))
+                    .font(.caption2).foregroundColor(.secondary)
+            }
+            ProgressView(value: extra.percent).tint(.secondary)
+            Text(String(format: "$%.2f / $%.2f this month", extra.usedCredits, extra.monthlyLimit))
+                .font(.caption2).foregroundColor(.secondary.opacity(0.7))
         }
     }
 }
@@ -221,7 +271,7 @@ private struct PetTabView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Pet display area
-            VStack(spacing: 6) {
+            VStack(spacing: 8) {
                 if let stillImageName = petManager.petTabStillImageName {
                     Image(stillImageName)
                         .interpolation(.none)
@@ -240,20 +290,25 @@ private struct PetTabView: View {
                     .padding(.top, 16)
                 }
 
+                // 펫 이름 뱃지
+                Text(petManager.petType.displayName)
+                    .font(.system(size: 11, weight: .medium))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 4)
+                    .background(Color.accentColor.opacity(0.1), in: Capsule())
+                    .foregroundColor(.accentColor.opacity(0.8))
+
+                // 무드 뱃지 + 대사
                 Text(petManager.sessionMood.badge)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.system(size: 11, weight: .medium))
                     .foregroundColor(.secondary)
                     .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color.primary.opacity(0.08), in: Capsule())
-
-                Text(petManager.petStatusMessage)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.primary)
+                    .padding(.vertical, 3)
+                    .background(Color.primary.opacity(0.06), in: Capsule())
 
                 Text(petManager.petDialogue)
                     .font(.system(size: 12))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.secondary.opacity(0.8))
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: 220)
             }
@@ -266,8 +321,8 @@ private struct PetTabView: View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
                     Text("Lv.\(petManager.petLevel)")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundColor(.primary)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(.primary.opacity(0.7))
                     Spacer()
                     Text("\(Int(petManager.levelProgress * 100))%")
                         .font(.caption2)
@@ -294,28 +349,26 @@ private struct PetTabView: View {
                 .padding(.vertical, 10)
                 .padding(.horizontal, 14)
 
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 HStack {
                     Text("세션 컨디션")
                         .font(.caption)
+                        .fontWeight(.semibold)
                         .foregroundColor(.secondary)
                     Spacer()
-                    Text(petManager.sessionUsageSummary)
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
+                    if let session = petManager.fiveHour {
+                        Text("\(Int(session.utilization))%")
+                            .font(.caption2)
+                            .foregroundColor(sessionTint(for: session.percent).opacity(0.8))
+                    }
                 }
 
                 if let session = petManager.fiveHour {
                     ProgressView(value: session.percent)
                         .tint(sessionTint(for: session.percent))
                 } else {
-                    ProgressView()
-                        .controlSize(.small)
+                    ProgressView().controlSize(.small)
                 }
-
-                Text(petManager.petCareHint)
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
             }
             .padding(10)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -347,7 +400,7 @@ private struct PetTabView: View {
                             .foregroundColor(.secondary)
                         Text(petManager.petType.displayName)
                             .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(.primary)
+                            .foregroundColor(.primary.opacity(0.75))
                     }
 
                     Spacer()
@@ -368,14 +421,34 @@ private struct PetTabView: View {
 
             // Stats
             VStack(spacing: 6) {
-                statRow(icon: "✨", label: "오늘", value: "\(petManager.todayTokens.formatted()) tokens")
-                statRow(icon: "📊", label: "이번달", value: "\(petManager.monthlyTokens.formatted()) tokens")
+                // 오늘 토큰 + 어제 대비
+                HStack {
+                    Text("✨ 오늘")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    HStack(spacing: 4) {
+                        Text("\(petManager.todayTokens.formatted()) 토큰")
+                            .font(.caption)
+                            .foregroundColor(.primary.opacity(0.75))
+                        let delta = petManager.todayTokens - petManager.yesterdayTokens
+                        if delta != 0 && petManager.yesterdayTokens > 0 {
+                            Text(delta > 0 ? "▲" : "▼")
+                                .font(.system(size: 9, weight: .semibold))
+                                .foregroundColor(delta > 0 ? Color.orange.opacity(0.75) : Color.mint.opacity(0.75))
+                            Text(abs(delta).formatted())
+                                .font(.caption2)
+                                .foregroundColor(delta > 0 ? Color.orange.opacity(0.75) : Color.mint.opacity(0.75))
+                        }
+                    }
+                }
+                statRow(icon: "📊", label: "이번달", value: "\(petManager.monthlyTokens.formatted()) 토큰")
                 if let resetAt = petManager.fiveHour?.resetsAt {
                     statRow(icon: "⏰", label: "리셋", value: resetAt.formatted(date: .omitted, time: .shortened))
                 }
             }
             .padding(.horizontal, 14)
-            .padding(.bottom, 16)
+            .padding(.bottom, 14)
         }
     }
 
@@ -387,7 +460,7 @@ private struct PetTabView: View {
             Spacer()
             Text(value)
                 .font(.caption)
-                .foregroundColor(.primary)
+                .foregroundColor(.primary.opacity(0.75))
         }
     }
 
@@ -409,14 +482,14 @@ private struct CharacterPickerView: View {
     private let previewOptions: [PetPreviewOption] = [
         .init(
             name: "물범 말랑이",
-            subtitle: "기존 애니메이션 사용",
+            subtitle: "보들보들 말랑말랑, 안아줘요 🦭",
             assetName: "pet_preview_seal",
             accent: Color(red: 0.84, green: 0.92, blue: 1.0),
             petType: .seal
         ),
         .init(
             name: "고양 말랑이",
-            subtitle: "현재는 단일 이미지 사용",
+            subtitle: "시크한 척이지만 응원 중이냥 🐾",
             assetName: "pet_preview_cat",
             accent: Color(red: 0.95, green: 0.91, blue: 0.82),
             petType: .cat
@@ -492,7 +565,7 @@ private struct PetPreviewRow: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(option.name)
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.primary)
+                        .foregroundColor(.primary.opacity(0.8))
                     Text(option.subtitle)
                         .font(.system(size: 11))
                         .foregroundColor(.secondary)
