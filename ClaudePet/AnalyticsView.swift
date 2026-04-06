@@ -28,6 +28,10 @@ struct AnalyticsView: View {
         }
     }
 
+    private var weekdayLabels: [String] {
+        Array(dates.prefix(cols)).map { Self.weekdayFormatter.string(from: $0) }
+    }
+
     private var maxTokens: Int { max(dailyUsage.values.max() ?? 1, 1) }
 
     private var totalTokens: Int {
@@ -118,6 +122,12 @@ struct AnalyticsView: View {
         return f
     }()
 
+    private static let weekdayFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.setLocalizedDateFormatFromTemplate("EEE")
+        return formatter
+    }()
+
     private func tooltip(date: Date) -> String {
         let tokens = dailyUsage[date] ?? 0
         let dateStr = Self.tooltipDate.string(from: date)
@@ -143,20 +153,30 @@ struct AnalyticsView: View {
                     .foregroundColor(.secondary)
             }
 
-            // Heatmap grid
-            let datesArr = dates
-            LazyVGrid(
-                columns: Array(repeating: GridItem(.fixed(cellSize), spacing: spacing), count: cols),
-                spacing: spacing
-            ) {
-                ForEach(0..<(cols * rows), id: \.self) { i in
-                    let date = datesArr[i]
-                    let lv = level(for: date)
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: spacing) {
+                    ForEach(Array(weekdayLabels.enumerated()), id: \.offset) { _, label in
+                        Text(label)
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                            .frame(width: cellSize)
+                    }
+                }
 
-                    RoundedRectangle(cornerRadius: 5)
-                        .fill(cellColor(lv))
-                        .frame(width: cellSize, height: cellSize)
-                        .help(tooltip(date: date))
+                let datesArr = dates
+                LazyVGrid(
+                    columns: Array(repeating: GridItem(.fixed(cellSize), spacing: spacing), count: cols),
+                    spacing: spacing
+                ) {
+                    ForEach(0..<(cols * rows), id: \.self) { i in
+                        let date = datesArr[i]
+                        let lv = level(for: date)
+
+                        RoundedRectangle(cornerRadius: 5)
+                            .fill(cellColor(lv))
+                            .frame(width: cellSize, height: cellSize)
+                            .help(tooltip(date: date))
+                    }
                 }
             }
 
@@ -214,6 +234,13 @@ struct AnalyticsView: View {
                         accent: weeklyTrendAccent
                     )
                 }
+            } else if !isLoading {
+                summaryCard(
+                    title: "No activity yet",
+                    value: "0 tokens",
+                    detail: "The heatmap will fill in as local Claude usage is collected.",
+                    accent: .secondary
+                )
             }
         }
     }
