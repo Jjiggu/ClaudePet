@@ -20,83 +20,66 @@
 
 import Foundation
 
+struct JournalSnapshot {
+    let dailyUsage: [Date: Int]
+    let monthlyTokens: Int
+
+    static let empty = JournalSnapshot(dailyUsage: [:], monthlyTokens: 0)
+}
+
 struct JournalLoader {
 
     /// Returns { startOfDay → totalTokens } for the last `days` calendar days.
-    static func load(days: Int = 35) -> [Date: Int] {
+    static func load(days: Int = 35, now: Date = Date(), baseURL: URL? = nil) -> [Date: Int] {
+        loadSnapshot(days: days, now: now, baseURL: baseURL).dailyUsage
+    }
+
+    /// Returns both the recent daily usage map and the current-month total in one filesystem scan.
+    static func loadSnapshot(days: Int = 35, now: Date = Date(), baseURL: URL? = nil) -> JournalSnapshot {
         let cal = Calendar.current
-        let today = cal.startOfDay(for: Date())
+        let today = cal.startOfDay(for: now)
         guard let cutoff = cal.date(byAdding: .day, value: -(days - 1), to: today) else {
-            return [:]
+            return .empty
+        }
+        guard let monthStart = startOfCurrentMonth(for: now, calendar: cal) else {
+            return .empty
         }
 
-        let base = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(".claude/projects")
+        let base = baseURL ?? defaultProjectsURL()
 
         guard let enumerator = FileManager.default.enumerator(
             at: base,
             includingPropertiesForKeys: [.isRegularFileKey, .contentModificationDateKey],
             options: [.skipsHiddenFiles]
-        ) else { return [:] }
+        ) else { return .empty }
 
-        var result: [Date: Int] = [:]
+        var dailyUsage: [Date: Int] = [:]
+        var monthlyTokens = 0
+        let earliestRelevantDate = min(cutoff, monthStart)
 
         for case let url as URL in enumerator {
             guard url.pathExtension == "jsonl" else { continue }
 
-            // Skip files not touched in the window (cheap pre-filter)
+            // Skip files not touched in either window (cheap pre-filter)
             if let mod = try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate,
-               mod < cutoff { continue }
+               mod < earliestRelevantDate { continue }
 
-            parseFile(url, cutoff: cutoff, calendar: cal, into: &result)
+            parseFile(
+                url,
+                cutoff: cutoff,
+                monthStart: monthStart,
+                calendar: cal,
+                into: &dailyUsage,
+                monthlyTotal: &monthlyTokens
+            )
         }
 
-        return result
+        return JournalSnapshot(dailyUsage: dailyUsage, monthlyTokens: monthlyTokens)
     }
 
     /// Returns total tokens for the current calendar month (resets on the 1st).
-    static func currentMonthTotal() -> Int {
-        let cal = Calendar.current
-        let now = Date()
-        var comps = cal.dateComponents([.year, .month], from: now)
-        comps.day = 1
-        comps.hour = 0; comps.minute = 0; comps.second = 0
-        guard let monthStart = cal.date(from: comps) else { return 0 }
-
-        let base = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(".claude/projects")
-
-        guard let enumerator = FileManager.default.enumerator(
-            at: base,
-            includingPropertiesForKeys: [.isRegularFileKey, .contentModificationDateKey],
-            options: [.skipsHiddenFiles]
-        ) else { return 0 }
-
-        var total = 0
-        for case let url as URL in enumerator {
-            guard url.pathExtension == "jsonl" else { continue }
-            // Pre-filter: skip files not modified this month
-            if let mod = try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate,
-               mod < monthStart { continue }
-
-            guard let content = try? String(contentsOf: url, encoding: .utf8) else { continue }
-            for line in content.split(separator: "\n", omittingEmptySubsequences: true) {
-                guard let data = String(line).data(using: .utf8),
-                      let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                      json["type"] as? String == "assistant",
-                      let tsStr = json["timestamp"] as? String,
-                      let date = parseDate(tsStr),
-                      date >= monthStart,
-                      let message = json["message"] as? [String: Any],
-                      let usage = message["usage"] as? [String: Any]
-                else { continue }
-                total += (usage["input_tokens"]                as? Int ?? 0)
-                       + (usage["output_tokens"]               as? Int ?? 0)
-                       + (usage["cache_creation_input_tokens"] as? Int ?? 0)
-                       + (usage["cache_read_input_tokens"]     as? Int ?? 0)
-            }
-        }
-        return total
+    static func currentMonthTotal(now: Date = Date(), baseURL: URL? = nil) -> Int {
+        loadSnapshot(now: now, baseURL: baseURL).monthlyTokens
     }
 
     // MARK: - File parsing
@@ -104,31 +87,61 @@ struct JournalLoader {
     private static func parseFile(
         _ url: URL,
         cutoff: Date,
+        monthStart: Date,
         calendar cal: Calendar,
-        into result: inout [Date: Int]
+        into result: inout [Date: Int],
+        monthlyTotal: inout Int
     ) {
         guard let content = try? String(contentsOf: url, encoding: .utf8) else { return }
 
         for line in content.split(separator: "\n", omittingEmptySubsequences: true) {
-            guard let data = String(line).data(using: .utf8),
-                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  json["type"] as? String == "assistant",
-                  let tsStr = json["timestamp"] as? String,
-                  let date = parseDate(tsStr),
-                  date >= cutoff,
-                  let message = json["message"] as? [String: Any],
-                  let usage = message["usage"] as? [String: Any]
-            else { continue }
+            guard let record = record(from: String(line)) else { continue }
 
-            let tokens = (usage["input_tokens"]                as? Int ?? 0)
-                       + (usage["output_tokens"]               as? Int ?? 0)
-                       + (usage["cache_creation_input_tokens"] as? Int ?? 0)
-                       + (usage["cache_read_input_tokens"]     as? Int ?? 0)
+            if record.date >= cutoff {
+                let day = cal.startOfDay(for: record.date)
+                result[day, default: 0] += record.tokens
+            }
 
-            guard tokens > 0 else { continue }
-            let day = cal.startOfDay(for: date)
-            result[day, default: 0] += tokens
+            if record.date >= monthStart {
+                monthlyTotal += record.tokens
+            }
         }
+    }
+
+    private static func defaultProjectsURL() -> URL {
+        FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".claude/projects")
+    }
+
+    private static func startOfCurrentMonth(for now: Date, calendar cal: Calendar) -> Date? {
+        var comps = cal.dateComponents([.year, .month], from: now)
+        comps.day = 1
+        comps.hour = 0
+        comps.minute = 0
+        comps.second = 0
+        return cal.date(from: comps)
+    }
+
+    static func record(from line: String) -> (date: Date, tokens: Int)? {
+        guard let data = line.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              json["type"] as? String == "assistant",
+              let tsStr = json["timestamp"] as? String,
+              let date = parseDate(tsStr),
+              let message = json["message"] as? [String: Any],
+              let usage = message["usage"] as? [String: Any]
+        else { return nil }
+
+        let tokens = tokenCount(from: usage)
+        guard tokens > 0 else { return nil }
+        return (date, tokens)
+    }
+
+    static func tokenCount(from usage: [String: Any]) -> Int {
+        (usage["input_tokens"]                as? Int ?? 0)
+        + (usage["output_tokens"]               as? Int ?? 0)
+        + (usage["cache_creation_input_tokens"] as? Int ?? 0)
+        + (usage["cache_read_input_tokens"]     as? Int ?? 0)
     }
 
     // MARK: - Date parsing

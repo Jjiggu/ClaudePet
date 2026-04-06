@@ -341,12 +341,11 @@ final class PetManager: ObservableObject {
     func loadJournal() {
         isLoadingJournal = true
         Task {
-            // Run both heavy file scans concurrently off the main actor
-            async let usageTask   = Task.detached(priority: .utility) { JournalLoader.load() }.value
-            async let monthlyTask = Task.detached(priority: .utility) { JournalLoader.currentMonthTotal() }.value
-            let (usage, monthly) = await (usageTask, monthlyTask)
-            dailyUsage    = usage
-            monthlyTokens = monthly
+            let snapshot = await Task.detached(priority: .utility) {
+                JournalLoader.loadSnapshot()
+            }.value
+            dailyUsage = snapshot.dailyUsage
+            monthlyTokens = snapshot.monthlyTokens
             isLoadingJournal = false
         }
     }
