@@ -14,6 +14,10 @@ struct SettingsView: View {
         ("Off", 0), ("1m", 60), ("2m", 120), ("5m", 300), ("10m", 600)
     ]
 
+    private var selectedIntervalLabel: String {
+        intervalOptions.first(where: { $0.seconds == petManager.refreshInterval })?.label ?? "Custom"
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Header
@@ -111,25 +115,9 @@ struct SettingsView: View {
 
     @ViewBuilder
     private var menuBarPreview: some View {
-        let mode = petManager.menuBarDisplayMode
-        HStack(spacing: 4) {
-            if mode == .imageOnly || mode == .both {
-                AnimatedPetView(
-                    stage: petManager.petLevel,
-                    size: 22,
-                    fps: max(petManager.animationFPS, 4),
-                    fallbackEmoji: petManager.emoji,
-                    assetPrefix: petManager.menuBarAssetPrefix,
-                    useTemplateRendering: true
-                )
-            }
-            if mode == .usageOnly || mode == .both {
-                Text(petManager.fiveHour.map { "\(Int($0.utilization))%" } ?? "0%")
-                    .font(.system(size: 11))
-            }
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
+        MenuBarView(petManager: petManager)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
         .background(Color.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 5))
     }
 
@@ -142,13 +130,41 @@ struct SettingsView: View {
                 .fontWeight(.semibold)
                 .foregroundColor(.secondary)
 
-            Picker("", selection: $petManager.refreshInterval) {
-                ForEach(intervalOptions, id: \.seconds) { opt in
-                    Text(opt.label).tag(opt.seconds)
+            HStack {
+                Text("Current")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+
+                Spacer()
+
+                Menu {
+                    ForEach(intervalOptions, id: \.seconds) { option in
+                        Button {
+                            petManager.refreshInterval = option.seconds
+                        } label: {
+                            if petManager.refreshInterval == option.seconds {
+                                Label(option.label, systemImage: "checkmark")
+                            } else {
+                                Text(option.label)
+                            }
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 8) {
+                        Text(selectedIntervalLabel)
+                            .font(.caption)
+                            .foregroundColor(.primary)
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color.primary.opacity(0.07), in: Capsule())
                 }
+                .menuStyle(.borderlessButton)
+                .fixedSize()
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
         }
     }
 
