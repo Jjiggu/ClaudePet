@@ -53,44 +53,43 @@ struct AnimatedPetView: View {
     var body: some View {
         if let prefix = resolvedPrefix {
             let count = frameCount(for: prefix)
-            let frameImage = Image("\(prefix)_\(frameIndex)")
-                .renderingMode(useTemplateRendering ? .template : .original)
-                .interpolation(.none)
-                .resizable()
-                .frame(width: size, height: size)
-
-            if useTemplateRendering {
-                frameImage
-                    .foregroundStyle(.primary)
-                    .task(id: "\(prefix)-\(fps)-\(count)") {
-                        guard count > 0 else {
-                            frameIndex = 0
-                            return
-                        }
-                        frameIndex = 0
-                        while !Task.isCancelled {
-                            try? await Task.sleep(for: .seconds(1.0 / fps))
-                            frameIndex = (frameIndex + 1) % count
-                        }
-                    }
-            } else {
-                frameImage
-                    .task(id: "\(prefix)-\(fps)-\(count)") {
-                        guard count > 0 else {
-                            frameIndex = 0
-                            return
-                        }
-                        frameIndex = 0
-                        while !Task.isCancelled {
-                            try? await Task.sleep(for: .seconds(1.0 / fps))
-                            frameIndex = (frameIndex + 1) % count
-                        }
-                    }
+            Group {
+                if useTemplateRendering {
+                    frameImage(prefix: prefix)
+                        .foregroundStyle(.primary)
+                } else {
+                    frameImage(prefix: prefix)
+                }
+            }
+            .task(id: "\(prefix)-\(fps)-\(count)") {
+                await runAnimation(frameCount: count)
             }
         } else {
             Text(fallbackEmoji)
                 .font(.system(size: size * 0.75))
                 .frame(width: size, height: size)
+        }
+    }
+
+    private func frameImage(prefix: String) -> some View {
+        Image("\(prefix)_\(frameIndex)")
+            .renderingMode(useTemplateRendering ? .template : .original)
+            .interpolation(.none)
+            .resizable()
+            .frame(width: size, height: size)
+    }
+
+    @MainActor
+    private func runAnimation(frameCount: Int) async {
+        guard frameCount > 1 else {
+            frameIndex = 0
+            return
+        }
+
+        frameIndex = 0
+        while !Task.isCancelled {
+            try? await Task.sleep(for: .seconds(1.0 / fps))
+            frameIndex = (frameIndex + 1) % frameCount
         }
     }
 }
