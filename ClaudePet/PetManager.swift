@@ -117,58 +117,6 @@ enum SessionMood {
     }
 }
 
-// MARK: - API Response Models
-
-struct UsageQuota: Decodable {
-    /// 0–100 percent
-    let utilization: Double
-    /// nil when API omits or nulls the field (e.g. immediately after a reset)
-    let resetsAt: Date?
-
-    /// 0.0–1.0 for progress bars / stage logic
-    var percent: Double { min(utilization / 100.0, 1.0) }
-
-    enum CodingKeys: String, CodingKey {
-        case utilization
-        case resetsAt = "resets_at"
-    }
-}
-
-struct ExtraUsage: Decodable {
-    let isEnabled: Bool
-    /// Spending limit in dollars (e.g. 2000 = $2,000)
-    let monthlyLimit: Double
-    /// Amount spent so far this month in dollars
-    let usedCredits: Double
-    /// 0–100 percent; nil when nothing has been spent yet
-    let utilization: Double?
-
-    var percent: Double { min((utilization ?? 0) / 100.0, 1.0) }
-
-    enum CodingKeys: String, CodingKey {
-        case isEnabled    = "is_enabled"
-        case monthlyLimit = "monthly_limit"
-        case usedCredits  = "used_credits"
-        case utilization
-    }
-}
-
-struct OAuthUsageResponse: Decodable {
-    let fiveHour: UsageQuota?
-    let sevenDay: UsageQuota?
-    let sevenDaySonnet: UsageQuota?
-    let sevenDayOpus: UsageQuota?
-    let extraUsage: ExtraUsage?
-
-    enum CodingKeys: String, CodingKey {
-        case fiveHour       = "five_hour"
-        case sevenDay       = "seven_day"
-        case sevenDaySonnet = "seven_day_sonnet"
-        case sevenDayOpus   = "seven_day_opus"
-        case extraUsage     = "extra_usage"
-    }
-}
-
 // MARK: - PetManager
 
 @MainActor
@@ -332,8 +280,7 @@ final class PetManager: ObservableObject {
     private var rateLimitBackoff: Double = 60   // seconds; doubles on each 429, resets on success
     private var lastFetchTime: Date = .distantPast  // minimum 60s between requests
     private var isInitialized = false           // blocks didSet observers during init
-    private let endpoint        = URL(string: "https://api.anthropic.com/api/oauth/usage")!
-    private let accountEndpoint = URL(string: "https://api.anthropic.com/api/account")!
+    private let usageClient = UsageAPIClient()
     private let minFetchInterval: Double = 60   // never request more than once per minute
 
     init() {
@@ -362,24 +309,12 @@ final class PetManager: ObservableObject {
     func fetchPlanInfo() {
         guard let token = authState.token else { return }
         Task {
-            var request = URLRequest(url: accountEndpoint)
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-            request.setValue("oauth-2025-04-20", forHTTPHeaderField: "anthropic-beta")
-            guard let (data, resp) = try? await URLSession.shared.data(for: request),
-                  (resp as? HTTPURLResponse)?.statusCode == 200,
-                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
-            else {
+            do {
+                if let rawPlan = try await usageClient.fetchPlanName(token: token) {
+                    planName = formatPlanName(rawPlan)
+                }
+            } catch {
                 print("[ClaudePet] account endpoint unavailable or failed")
-                return
-            }
-            print("[ClaudePet] /api/account: \(json)")
-            // Parse known plan fields — update keys once confirmed via log
-            let raw = json["subscription_plan"] as? String
-                   ?? json["plan"] as? String
-                   ?? json["plan_name"] as? String
-                   ?? json["tier"] as? String
-            if let raw {
-                planName = formatPlanName(raw)
             }
         }
     }
@@ -456,54 +391,37 @@ final class PetManager: ObservableObject {
         errorMessage = nil
         lastFetchTime = Date()
 
-        var request = URLRequest(url: endpoint)
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue("oauth-2025-04-20", forHTTPHeaderField: "anthropic-beta")
-
-        var responseData: Data?
         do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-            responseData = data
-
-            guard let http = response as? HTTPURLResponse else {
-                throw URLError(.badServerResponse)
+            let usage = try await usageClient.fetchUsage(token: token)
+            applyUsage(usage)
+            lastUsageRefreshAt = Date()
+            rateLimitBackoff = 60
+        } catch UsageAPIClientError.payloadMessage(let message) {
+            if fiveHour == nil { errorMessage = message }
+        } catch UsageAPIClientError.unauthorized {
+            errorMessage = "Token expired.\nRun `claude login` again."
+        } catch UsageAPIClientError.rateLimited {
+            rateLimitBackoff = min(rateLimitBackoff * 2, 1800)
+            lastFetchTime = Date()
+            if fiveHour == nil {
+                errorMessage = "Rate limited by API.\nWill retry automatically."
             }
-
-            switch http.statusCode {
-            case 200:
-                // Guard against error body disguised as 200 (e.g. rate_limit_error)
-                if let raw = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                   let apiError = raw["error"] as? [String: Any],
-                   let msg = apiError["message"] as? String {
-                    if fiveHour == nil { errorMessage = msg }
-                    break
-                }
-                let usage = try Self.decode(data)
-                applyUsage(usage)
-                lastUsageRefreshAt = Date()
-                rateLimitBackoff = 60   // reset backoff on success
-            case 401:
-                errorMessage = "Token expired.\nRun `claude login` again."
-            case 429:
-                // Exponential backoff: 60s → 120s → 240s … up to 30min
-                rateLimitBackoff = min(rateLimitBackoff * 2, 1800)
-                lastFetchTime = Date()  // delay next fetch by backoff duration
-                if fiveHour == nil {
-                    errorMessage = "Rate limited by API.\nWill retry automatically."
-                }
-            default:
-                errorMessage = "API error \(http.statusCode)"
-            }
-        } catch let error as DecodingError {
-            // JSON shape mismatch — log raw body and surface clearly
+        } catch UsageAPIClientError.api(let statusCode) {
+            errorMessage = "API error \(statusCode)"
+        } catch UsageAPIClientError.decoding(let error, let rawBody) {
             errorMessage = "Unexpected API response.\nCheck app update."
             print("[ClaudePet] Decode error: \(error)")
-            if let data = responseData,
-               let raw = try? JSONSerialization.jsonObject(with: data) {
-                print("[ClaudePet] Raw body: \(raw)")
+            if let rawBody {
+                print("[ClaudePet] Raw body: \(rawBody)")
             }
+        } catch UsageAPIClientError.invalidResponse {
+            errorMessage = "Unexpected API response.\nCheck app update."
         } catch {
-            errorMessage = error.localizedDescription
+            if let urlError = error as? URLError, urlError.code == .userAuthenticationRequired {
+                errorMessage = "Token expired.\nRun `claude login` again."
+            } else {
+                errorMessage = error.localizedDescription
+            }
         }
 
         isLoading = false
@@ -538,32 +456,5 @@ final class PetManager: ObservableObject {
     private func requestNotificationPermission() {
         UNUserNotificationCenter.current()
             .requestAuthorization(options: [.alert, .sound]) { _, _ in }
-    }
-
-    // MARK: - Decoding
-
-    private nonisolated(unsafe) static let isoFrac: ISO8601DateFormatter = {
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return f
-    }()
-    private nonisolated(unsafe) static let isoPlain: ISO8601DateFormatter = {
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime]
-        return f
-    }()
-
-    private static func decode(_ data: Data) throws -> OAuthUsageResponse {
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .custom { dec in
-            let str = try dec.singleValueContainer().decode(String.self)
-            if let d = isoFrac.date(from: str)  { return d }
-            if let d = isoPlain.date(from: str) { return d }
-            throw DecodingError.dataCorruptedError(
-                in: try dec.singleValueContainer(),
-                debugDescription: "Cannot parse date: \(str)"
-            )
-        }
-        return try decoder.decode(OAuthUsageResponse.self, from: data)
     }
 }
