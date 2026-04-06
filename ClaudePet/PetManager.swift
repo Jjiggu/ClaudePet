@@ -158,6 +158,7 @@ final class PetManager: ObservableObject {
     @Published var sevenDaySonnet: UsageQuota?
     @Published var sevenDayOpus: UsageQuota?
     @Published var isLoading = false
+    @Published private(set) var lastUsageRefreshAt: Date?
     @Published var errorMessage: String?
     @Published var dailyUsage: [Date: Int] = [:]
     @Published var isLoadingJournal = false
@@ -424,6 +425,7 @@ final class PetManager: ObservableObject {
                 }
                 let usage = try Self.decode(data)
                 applyUsage(usage)
+                lastUsageRefreshAt = Date()
                 rateLimitBackoff = 60   // reset backoff on success
             case 401:
                 errorMessage = "Token expired.\nRun `claude login` again."

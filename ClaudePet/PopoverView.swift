@@ -11,6 +11,15 @@ import SwiftUI
 private enum Tab { case usage, analytics, pet }
 private enum Route { case tabs, characterPicker, settings }
 
+private struct PressableCapsuleButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.96 : 1.0)
+            .opacity(configuration.isPressed ? 0.88 : 1.0)
+            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+    }
+}
+
 // MARK: - Root
 
 struct PopoverView: View {
@@ -125,30 +134,65 @@ private struct MainView: View {
             Divider()
 
             // Bottom bar: refresh (left) + quit (right)
-            HStack {
-                Button { petManager.refresh() } label: {
-                    Image(systemName: "arrow.clockwise")
-                        .rotationEffect(petManager.isLoading ? .degrees(360) : .zero)
-                        .animation(
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Button { petManager.refresh() } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "arrow.clockwise")
+                                .rotationEffect(petManager.isLoading ? .degrees(360) : .zero)
+                                .animation(
+                                    petManager.isLoading
+                                        ? .linear(duration: 1).repeatForever(autoreverses: false)
+                                        : .default,
+                                    value: petManager.isLoading
+                                )
+                                .font(.system(size: 12, weight: .semibold))
+
+                            Text(petManager.isLoading ? "새로고침 중" : "새로고침")
+                                .font(.system(size: 11, weight: .semibold))
+                        }
+                        .foregroundColor(petManager.isLoading ? .white : .primary)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(
                             petManager.isLoading
-                                ? .linear(duration: 1).repeatForever(autoreverses: false)
-                                : .default,
-                            value: petManager.isLoading
+                                ? Color.accentColor
+                                : Color.primary.opacity(0.08),
+                            in: Capsule()
                         )
-                        .font(.system(size: 13))
-                        .foregroundColor(.secondary)
-                }
-                .buttonStyle(.plain)
-                .disabled(petManager.isLoading)
+                    }
+                    .buttonStyle(PressableCapsuleButtonStyle())
+                    .disabled(petManager.isLoading)
 
-                Spacer()
+                    Spacer()
 
-                Button { NSApplication.shared.terminate(nil) } label: {
-                    Image(systemName: "power")
-                        .font(.system(size: 13))
-                        .foregroundColor(.secondary)
+                    Button { NSApplication.shared.terminate(nil) } label: {
+                        Image(systemName: "power")
+                            .font(.system(size: 13))
+                            .foregroundColor(.secondary)
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
+                
+                HStack(spacing: 6) {
+                    if petManager.isLoading {
+                        ProgressView()
+                            .controlSize(.small)
+                            .scaleEffect(0.65)
+                        Text("최신 사용량을 확인하고 있어요")
+                    } else if let lastRefreshAt = petManager.lastUsageRefreshAt {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.green)
+                        Text("마지막 업데이트")
+                        Text(lastRefreshAt, style: .relative)
+                    } else {
+                        Image(systemName: "hand.tap")
+                        .foregroundColor(.secondary)
+                        Text("버튼을 눌러 최신 사용량을 가져오세요")
+                    }
+                }
+                .font(.caption2)
+                .foregroundColor(.secondary)
             }
         }
         .padding(14)
