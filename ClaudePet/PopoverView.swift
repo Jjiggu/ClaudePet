@@ -290,14 +290,6 @@ private struct PetTabView: View {
                     .padding(.top, 16)
                 }
 
-                // 펫 이름 뱃지
-                Text(petManager.petType.displayName)
-                    .font(.system(size: 11, weight: .medium))
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 4)
-                    .background(Color.accentColor.opacity(0.1), in: Capsule())
-                    .foregroundColor(.accentColor.opacity(0.8))
-
                 // 무드 뱃지 + 대사
                 Text(petManager.sessionMood.badge)
                     .font(.system(size: 11, weight: .medium))
