@@ -14,10 +14,6 @@ struct SettingsView: View {
         ("Off", 0), ("1분", 60), ("2분", 120), ("5분", 300), ("10분", 600)
     ]
 
-    // Auth state evaluated once per view render (cheap)
-    private var authSource: String? { AuthLoader.authSource() }
-    private var isConnected: Bool { authSource != nil }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Header
@@ -52,6 +48,9 @@ struct SettingsView: View {
             }
             .padding(14)
         }
+        .onAppear {
+            petManager.refreshAuthStatus()
+        }
     }
 
     // MARK: - Auth Section
@@ -66,9 +65,9 @@ struct SettingsView: View {
             HStack {
                 HStack(spacing: 6) {
                     Circle()
-                        .fill(isConnected ? Color.green : Color.red)
+                        .fill(petManager.isAuthenticated ? Color.green : Color.red)
                         .frame(width: 7, height: 7)
-                    Text(isConnected ? "연결됨" : "연결 안 됨")
+                    Text(petManager.isAuthenticated ? "연결됨" : "연결 안 됨")
                         .font(.caption)
                 }
                 .padding(.horizontal, 8)
@@ -77,12 +76,12 @@ struct SettingsView: View {
 
                 Spacer()
 
-                Text(authSource ?? "없음")
+                Text(petManager.authSourceDisplayName)
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
 
-            if !isConnected {
+            if !petManager.isAuthenticated {
                 Text("터미널에서 `claude login`을 실행하세요.")
                     .font(.caption2)
                     .foregroundColor(.orange)
@@ -116,10 +115,14 @@ struct SettingsView: View {
         let mode = petManager.menuBarDisplayMode
         HStack(spacing: 4) {
             if mode == .imageOnly || mode == .both {
-                Image("pet_stage1_0")
-                    .interpolation(.none)
-                    .resizable()
-                    .frame(width: 22, height: 22)
+                AnimatedPetView(
+                    stage: petManager.petLevel,
+                    size: 22,
+                    fps: max(petManager.animationFPS, 4),
+                    fallbackEmoji: petManager.emoji,
+                    assetPrefix: petManager.menuBarAssetPrefix,
+                    useTemplateRendering: true
+                )
             }
             if mode == .usageOnly || mode == .both {
                 Text(petManager.fiveHour.map { "\(Int($0.utilization))%" } ?? "0%")

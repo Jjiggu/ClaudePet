@@ -162,6 +162,7 @@ final class PetManager: ObservableObject {
     @Published var dailyUsage: [Date: Int] = [:]
     @Published var isLoadingJournal = false
     @Published var monthlyTokens: Int = 0
+    @Published private(set) var authState: AuthState = .missing
 
     @Published var petType: PetType {
         didSet { UserDefaults.standard.set(petType.rawValue, forKey: "selectedPetType") }
@@ -292,6 +293,14 @@ final class PetManager: ObservableObject {
         return "최근 5시간 세션 사용량은 \(percent)%예요."
     }
 
+    var authSourceDisplayName: String {
+        authState.source?.displayName ?? "없음"
+    }
+
+    var isAuthenticated: Bool {
+        authState.token != nil
+    }
+
     /// Animation fps: 4 (idle) → 15 (max session). RunCat-style speed.
     var animationFPS: Double {
         let p = fiveHour?.percent ?? 0
@@ -318,11 +327,16 @@ final class PetManager: ObservableObject {
         notificationsEnabled = UserDefaults.standard.bool(forKey: "notificationsEnabled")
         notificationThreshold = UserDefaults.standard.object(forKey: "notificationThreshold") as? Double ?? 0.8
         isInitialized = true
+        refreshAuthStatus()
         startPolling()
         loadJournal()
     }
 
     deinit { pollTask?.cancel() }
+
+    func refreshAuthStatus() {
+        authState = AuthLoader.loadAuthState()
+    }
 
     func loadJournal() {
         isLoadingJournal = true
@@ -372,7 +386,10 @@ final class PetManager: ObservableObject {
         isFetching = true
         defer { isFetching = false }
 
-        guard let token = AuthLoader.loadOAuthToken() else {
+        let currentAuthState = AuthLoader.loadAuthState()
+        authState = currentAuthState
+
+        guard let token = currentAuthState.token else {
             errorMessage = "No OAuth token.\nRun `claude login` in Terminal."
             isLoading = false
             return
