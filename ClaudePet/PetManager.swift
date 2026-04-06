@@ -134,17 +134,38 @@ struct UsageQuota: Decodable {
     }
 }
 
+struct ExtraUsage: Decodable {
+    let isEnabled: Bool
+    /// Spending limit in dollars (e.g. 2000 = $2,000)
+    let monthlyLimit: Double
+    /// Amount spent so far this month in dollars
+    let usedCredits: Double
+    /// 0–100 percent; nil when nothing has been spent yet
+    let utilization: Double?
+
+    var percent: Double { min((utilization ?? 0) / 100.0, 1.0) }
+
+    enum CodingKeys: String, CodingKey {
+        case isEnabled    = "is_enabled"
+        case monthlyLimit = "monthly_limit"
+        case usedCredits  = "used_credits"
+        case utilization
+    }
+}
+
 struct OAuthUsageResponse: Decodable {
     let fiveHour: UsageQuota?
     let sevenDay: UsageQuota?
     let sevenDaySonnet: UsageQuota?
     let sevenDayOpus: UsageQuota?
+    let extraUsage: ExtraUsage?
 
     enum CodingKeys: String, CodingKey {
         case fiveHour       = "five_hour"
         case sevenDay       = "seven_day"
         case sevenDaySonnet = "seven_day_sonnet"
         case sevenDayOpus   = "seven_day_opus"
+        case extraUsage     = "extra_usage"
     }
 }
 
@@ -157,6 +178,7 @@ final class PetManager: ObservableObject {
     @Published var sevenDay: UsageQuota?
     @Published var sevenDaySonnet: UsageQuota?
     @Published var sevenDayOpus: UsageQuota?
+    @Published var extraUsage: ExtraUsage?
     @Published var isLoading = false
     @Published private(set) var lastUsageRefreshAt: Date?
     @Published var errorMessage: String?
@@ -164,6 +186,7 @@ final class PetManager: ObservableObject {
     @Published var isLoadingJournal = false
     @Published var monthlyTokens: Int = 0
     @Published private(set) var authState: AuthState = .missing
+    @Published private(set) var planName: String?
 
     @Published var petType: PetType {
         didSet { UserDefaults.standard.set(petType.rawValue, forKey: "selectedPetType") }
@@ -227,12 +250,7 @@ final class PetManager: ObservableObject {
         }
     }
 
-    var petTabStillImageName: String? {
-        switch petType {
-        case .seal: nil
-        case .cat: "pet_cat_large"
-        }
-    }
+    var petTabStillImageName: String? { nil }
 
     // MARK: - Pet Level (monthly JSONL tokens, resets on the 1st)
 
@@ -269,6 +287,12 @@ final class PetManager: ObservableObject {
     var todayTokens: Int {
         let today = Calendar.current.startOfDay(for: Date())
         return dailyUsage[today] ?? 0
+    }
+
+    /// Yesterday's token count from JSONL
+    var yesterdayTokens: Int {
+        let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Calendar.current.startOfDay(for: Date()))!
+        return dailyUsage[yesterday] ?? 0
     }
 
     /// Status message based on current session utilization
@@ -314,7 +338,8 @@ final class PetManager: ObservableObject {
     private var rateLimitBackoff: Double = 60   // seconds; doubles on each 429, resets on success
     private var lastFetchTime: Date = .distantPast  // minimum 60s between requests
     private var isInitialized = false           // blocks didSet observers during init
-    private let endpoint = URL(string: "https://api.anthropic.com/api/oauth/usage")!
+    private let endpoint        = URL(string: "https://api.anthropic.com/api/oauth/usage")!
+    private let accountEndpoint = URL(string: "https://api.anthropic.com/api/account")!
     private let minFetchInterval: Double = 60   // never request more than once per minute
 
     init() {
@@ -331,12 +356,48 @@ final class PetManager: ObservableObject {
         refreshAuthStatus()
         startPolling()
         loadJournal()
+        fetchPlanInfo()
     }
 
     deinit { pollTask?.cancel() }
 
     func refreshAuthStatus() {
         authState = AuthLoader.loadAuthState()
+    }
+
+    func fetchPlanInfo() {
+        guard let token = authState.token else { return }
+        Task {
+            var request = URLRequest(url: accountEndpoint)
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            request.setValue("oauth-2025-04-20", forHTTPHeaderField: "anthropic-beta")
+            guard let (data, resp) = try? await URLSession.shared.data(for: request),
+                  (resp as? HTTPURLResponse)?.statusCode == 200,
+                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+            else {
+                print("[ClaudePet] account endpoint unavailable or failed")
+                return
+            }
+            print("[ClaudePet] /api/account: \(json)")
+            // Parse known plan fields — update keys once confirmed via log
+            let raw = json["subscription_plan"] as? String
+                   ?? json["plan"] as? String
+                   ?? json["plan_name"] as? String
+                   ?? json["tier"] as? String
+            if let raw {
+                planName = formatPlanName(raw)
+            }
+        }
+    }
+
+    private func formatPlanName(_ raw: String) -> String {
+        switch raw.lowercased() {
+        case let s where s.contains("max_20"): return "Claude Max 20×"
+        case let s where s.contains("max_5"):  return "Claude Max 5×"
+        case let s where s.contains("max"):    return "Claude Max"
+        case let s where s.contains("pro"):    return "Claude Pro"
+        default: return raw
+        }
     }
 
     func loadJournal() {
@@ -459,6 +520,7 @@ final class PetManager: ObservableObject {
         sevenDay       = usage.sevenDay
         sevenDaySonnet = usage.sevenDaySonnet
         sevenDayOpus   = usage.sevenDayOpus
+        extraUsage     = usage.extraUsage
         stage = PetStage(percent: usage.fiveHour?.percent ?? 0)
         checkThresholdNotification()
     }
