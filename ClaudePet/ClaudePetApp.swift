@@ -10,7 +10,6 @@ import SwiftUI
 @main
 struct ClaudePetApp: App {
     @StateObject private var petManager = PetManager()
-    @State private var popoverIsShown = false
 
     var body: some Scene {
         MenuBarExtra {
