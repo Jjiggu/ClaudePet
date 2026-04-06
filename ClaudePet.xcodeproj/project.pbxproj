@@ -17,6 +17,7 @@
 		BB000009000000000000001A /* AnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000009000000000000001A /* AnalyticsView.swift */; };
 		BB00000A000000000000001A /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000A000000000000001A /* SettingsView.swift */; };
 		BB00000B000000000000001A /* AnimatedPetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000B000000000000001A /* AnimatedPetView.swift */; };
+		BB00000C000000000000001A /* UsageAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000C000000000000001A /* UsageAPIClient.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -32,6 +33,7 @@
 		AA000009000000000000001A /* AnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsView.swift; sourceTree = "<group>"; };
 		AA00000A000000000000001A /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		AA00000B000000000000001A /* AnimatedPetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimatedPetView.swift; sourceTree = "<group>"; };
+		AA00000C000000000000001A /* UsageAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageAPIClient.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -59,6 +61,7 @@
 				AA000009000000000000001A /* AnalyticsView.swift */,
 				AA00000A000000000000001A /* SettingsView.swift */,
 				AA00000B000000000000001A /* AnimatedPetView.swift */,
+				AA00000C000000000000001A /* UsageAPIClient.swift */,
 			);
 			path = ClaudePet;
 			sourceTree = "<group>";
@@ -157,6 +160,7 @@
 				BB000009000000000000001A /* AnalyticsView.swift in Sources */,
 				BB00000A000000000000001A /* SettingsView.swift in Sources */,
 				BB00000B000000000000001A /* AnimatedPetView.swift in Sources */,
+				BB00000C000000000000001A /* UsageAPIClient.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
