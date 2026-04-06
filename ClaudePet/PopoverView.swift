@@ -192,6 +192,10 @@ struct PopoverView: View {
 private struct MainView: View {
     @ObservedObject var petManager: PetManager
 
+    private var viewState: UsageViewState {
+        petManager.usageViewState
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // Plan badge
@@ -207,12 +211,11 @@ private struct MainView: View {
                 }
             }
 
-            if let error = petManager.errorMessage {
-                Text(error)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.leading)
-            } else {
+            if let banner = viewState.banner {
+                usageBanner(banner)
+            }
+
+            if viewState.showsUsageContent {
                 usageRow("Session (5h)",  quota: petManager.fiveHour,      color: .blue)
                 usageRow("Weekly (7d)",   quota: petManager.sevenDay,       color: .green)
                 usageRow("Sonnet Weekly", quota: petManager.sevenDaySonnet, color: .orange)
@@ -222,9 +225,43 @@ private struct MainView: View {
                     Divider()
                     extraUsageRow(extra)
                 }
+            } else {
+                firstLoadPlaceholder
             }
         }
         .padding(14)
+    }
+
+    private var firstLoadPlaceholder: some View {
+        HStack(spacing: 8) {
+            ProgressView()
+                .controlSize(.small)
+            Text("Checking...")
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .padding(.vertical, 6)
+    }
+
+    private func usageBanner(_ banner: UsageBannerState) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: banner.style == .error ? "exclamationmark.triangle.fill" : "arrow.clockwise.circle.fill")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundColor(banner.style == .error ? .orange : .accentColor)
+
+            Text(banner.message)
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.leading)
+
+            Spacer(minLength: 0)
+        }
+        .padding(10)
+        .background(
+            (banner.style == .error ? Color.orange : Color.accentColor)
+                .opacity(0.10),
+            in: RoundedRectangle(cornerRadius: 8)
+        )
     }
 
     @ViewBuilder

@@ -260,6 +260,22 @@ final class PetManager: ObservableObject {
         return "최근 5시간 세션 사용량은 \(percent)%예요."
     }
 
+    var hasUsageData: Bool {
+        fiveHour != nil
+            || sevenDay != nil
+            || sevenDaySonnet != nil
+            || sevenDayOpus != nil
+            || extraUsage != nil
+    }
+
+    var usageViewState: UsageViewState {
+        UsageViewState.resolve(
+            hasUsageData: hasUsageData,
+            isLoading: isLoading,
+            errorMessage: errorMessage
+        )
+    }
+
     var authSourceDisplayName: String {
         authState.source?.displayName ?? "없음"
     }
