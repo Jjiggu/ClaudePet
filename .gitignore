@@ -1,0 +1,24 @@
+.DS_Store
+
+# Xcode and Swift build outputs
+DerivedData/
+build/
+.build/
+*.xcuserstate
+*.xccheckout
+*.moved-aside
+
+# Per-user Xcode workspace data
+*.xcodeproj/project.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+
+# Local environment and secret material
+.env
+.env.*
+*.pem
+*.p12
+*.cer
+*.mobileprovision
+Secrets*.plist
+LocalSecrets*.plist

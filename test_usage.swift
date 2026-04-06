@@ -10,7 +10,7 @@ import Foundation
 
 struct UsageQuota: Decodable {
     let utilization: Double
-    let resetsAt: Date
+    let resetsAt: Date?
     var percent: Double { min(utilization / 100.0, 1.0) }
     enum CodingKeys: String, CodingKey {
         case utilization
@@ -130,6 +130,15 @@ test("fractional seconds 날짜 파싱") {
     """
     let r = try decode(Data(json.utf8))
     return r.fiveHour != nil
+}
+
+test("resets_at null 허용") {
+    let json = """
+    {"five_hour":{"utilization":12.0,"resets_at":null},
+     "seven_day":null,"seven_day_sonnet":null,"seven_day_opus":null}
+    """
+    let r = try decode(Data(json.utf8))
+    return r.fiveHour?.utilization == 12.0 && r.fiveHour?.resetsAt == nil
 }
 
 test("모든 필드 null") {
