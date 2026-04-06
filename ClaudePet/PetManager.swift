@@ -230,7 +230,7 @@ final class PetManager: ObservableObject {
     var petTabStillImageName: String? {
         switch petType {
         case .seal: nil
-        case .cat: "pet_cat_large_0"
+        case .cat: "pet_cat_large"
         }
     }
 
