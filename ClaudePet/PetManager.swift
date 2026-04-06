@@ -368,18 +368,20 @@ final class PetManager: ObservableObject {
     }
 
     func refresh() {
-        Task { await fetchUsage() }
+        Task { await fetchUsage(force: true) }
     }
 
     // MARK: - Fetch
 
-    private func fetchUsage() async {
+    private func fetchUsage(force: Bool = false) async {
         guard !isFetching else { return }   // prevent concurrent fetches
 
         // Enforce minimum interval — never hammer the API faster than once per 60s
-        let elapsed = Date().timeIntervalSince(lastFetchTime)
-        if elapsed < minFetchInterval {
-            try? await Task.sleep(for: .seconds(minFetchInterval - elapsed))
+        if !force {
+            let elapsed = Date().timeIntervalSince(lastFetchTime)
+            if elapsed < minFetchInterval {
+                try? await Task.sleep(for: .seconds(minFetchInterval - elapsed))
+            }
         }
 
         isFetching = true
