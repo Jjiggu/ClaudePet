@@ -9,23 +9,23 @@ import SwiftUI
 // MARK: - Tab
 
 private enum Tab { case usage, analytics, pet }
+private enum Route { case tabs, characterPicker, settings }
 
 // MARK: - Root
 
 struct PopoverView: View {
     @ObservedObject var petManager: PetManager
     @State private var tab: Tab = .usage
-    @State private var showCharacterPicker = false
-    @State private var showSettings = false
+    @State private var route: Route = .tabs
 
     var body: some View {
         Group {
-            if showCharacterPicker {
+            if route == .characterPicker {
                 CharacterPickerView(petManager: petManager) {
-                    showCharacterPicker = false
+                    route = .tabs
                 }
-            } else if showSettings {
-                SettingsView(petManager: petManager) { showSettings = false }
+            } else if route == .settings {
+                SettingsView(petManager: petManager) { route = .tabs }
             } else {
                 VStack(spacing: 0) {
                     tabBar
@@ -40,7 +40,7 @@ struct PopoverView: View {
                         .padding(14)
                     } else {
                         PetTabView(petManager: petManager) {
-                            showCharacterPicker = true
+                            route = .characterPicker
                         }
                     }
                 }
@@ -55,7 +55,7 @@ struct PopoverView: View {
             tabButton("활동",   tab: .analytics,  icon: "square.grid.3x3.fill")
             tabButton("펫",     tab: .pet,        icon: "pawprint.fill")
             Spacer()
-            Button { showSettings = true } label: {
+            Button { route = .settings } label: {
                 Image(systemName: "gearshape")
                     .font(.system(size: 13))
                     .foregroundColor(.secondary)
