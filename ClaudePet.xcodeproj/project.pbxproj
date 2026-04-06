@@ -18,6 +18,7 @@
 		BB00000A000000000000001A /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000A000000000000001A /* SettingsView.swift */; };
 		BB00000B000000000000001A /* AnimatedPetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000B000000000000001A /* AnimatedPetView.swift */; };
 		BB00000C000000000000001A /* UsageAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000C000000000000001A /* UsageAPIClient.swift */; };
+		BB00000D000000000000001A /* SpriteFrameCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000D000000000000001A /* SpriteFrameCatalog.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -34,6 +35,7 @@
 		AA00000A000000000000001A /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		AA00000B000000000000001A /* AnimatedPetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimatedPetView.swift; sourceTree = "<group>"; };
 		AA00000C000000000000001A /* UsageAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageAPIClient.swift; sourceTree = "<group>"; };
+		AA00000D000000000000001A /* SpriteFrameCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpriteFrameCatalog.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -62,6 +64,7 @@
 				AA00000A000000000000001A /* SettingsView.swift */,
 				AA00000B000000000000001A /* AnimatedPetView.swift */,
 				AA00000C000000000000001A /* UsageAPIClient.swift */,
+				AA00000D000000000000001A /* SpriteFrameCatalog.swift */,
 			);
 			path = ClaudePet;
 			sourceTree = "<group>";
@@ -161,6 +164,7 @@
 				BB00000A000000000000001A /* SettingsView.swift in Sources */,
 				BB00000B000000000000001A /* AnimatedPetView.swift in Sources */,
 				BB00000C000000000000001A /* UsageAPIClient.swift in Sources */,
+				BB00000D000000000000001A /* SpriteFrameCatalog.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

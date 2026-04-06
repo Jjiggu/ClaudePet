@@ -7,7 +7,7 @@
 //
 //  Asset naming convention:
 //    {prefix}_{frameIndex}   (e.g. pet_stage1_0, pet_stage1_large_0 …)
-//  To change frame counts per prefix, update `frameCounts` below.
+//  Single-frame assets can also use the bare prefix.
 
 import SwiftUI
 import AppKit
@@ -24,32 +24,12 @@ struct AnimatedPetView: View {
 
     private var resolvedFrames: [String]? {
         if let prefix = assetPrefix {
-            let frames = availableFrames(for: prefix)
+            let frames = SpriteFrameCatalog.frames(for: prefix)
             return frames.isEmpty ? nil : frames
         }
 
-        for s in stride(from: stage, through: 1, by: -1) {
-            let frames = availableFrames(for: "pet_stage\(s)")
-            if !frames.isEmpty { return frames }
-        }
-
-        return nil
-    }
-
-    private func availableFrames(for prefix: String) -> [String] {
-        if NSImage(named: prefix) != nil {
-            return [prefix]
-        }
-
-        var frames: [String] = []
-        var index = 0
-
-        while NSImage(named: "\(prefix)_\(index)") != nil {
-            frames.append("\(prefix)_\(index)")
-            index += 1
-        }
-
-        return frames
+        let prefixes = stride(from: stage, through: 1, by: -1).map { "pet_stage\($0)" }
+        return SpriteFrameCatalog.firstAvailableFrames(prefixes: prefixes)
     }
 
     var body: some View {
