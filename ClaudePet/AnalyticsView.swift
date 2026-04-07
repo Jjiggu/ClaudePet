@@ -2,8 +2,8 @@
 //  AnalyticsView.swift
 //  ClaudePet
 //
-//  GitHub-style 35-day token usage heatmap (7 cols × 5 rows)
-//  Columns = weeks (left = oldest), rows = days within week (top = oldest in that week)
+//  Rolling 35-day token usage heatmap (7 days × 5 rows)
+//  Cells flow from the oldest day to today without calendar-week padding.
 
 import SwiftUI
 
@@ -30,10 +30,6 @@ struct AnalyticsView: View {
         return (0..<(cols * rows)).map { n in
             cal.date(byAdding: .day, value: -(cols * rows - 1 - n), to: today)!
         }
-    }
-
-    private var weekdayLabels: [String] {
-        Array(dates.prefix(cols)).map { Self.weekdayFormatter.string(from: $0) }
     }
 
     private var maxTokens: Int { max(dailyUsage.values.max() ?? 1, 1) }
@@ -126,12 +122,6 @@ struct AnalyticsView: View {
         return f
     }()
 
-    private static let weekdayFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.setLocalizedDateFormatFromTemplate("EEE")
-        return formatter
-    }()
-
     private func tooltip(date: Date) -> String {
         let tokens = dailyUsage[date] ?? 0
         let dateStr = Self.tooltipDate.string(from: date)
@@ -158,18 +148,7 @@ struct AnalyticsView: View {
             }
 
             VStack(alignment: .leading, spacing: 6) {
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack(spacing: spacing) {
-                        ForEach(Array(weekdayLabels.enumerated()), id: \.offset) { _, label in
-                            Text(label)
-                                .font(.system(size: 9, weight: .semibold))
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.75)
-                                .foregroundColor(.secondary)
-                                .frame(width: cellSize)
-                        }
-                    }
-
+                VStack(alignment: .leading, spacing: spacing) {
                     let datesArr = dates
                     LazyVGrid(
                         columns: Array(repeating: GridItem(.fixed(cellSize), spacing: spacing), count: cols),
