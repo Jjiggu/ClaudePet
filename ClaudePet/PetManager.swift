@@ -253,16 +253,6 @@ final class PetManager: ObservableObject {
         sessionMood.dialogue
     }
 
-    var petCareHint: String {
-        sessionMood.hint
-    }
-
-    var sessionUsageSummary: String {
-        guard let fiveHour else { return "세션 데이터를 불러오는 중이에요." }
-        let percent = Int(fiveHour.utilization.rounded())
-        return "최근 5시간 세션 사용량은 \(percent)%예요."
-    }
-
     var hasUsageData: Bool {
         fiveHour != nil
             || sevenDay != nil
