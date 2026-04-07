@@ -17,6 +17,10 @@ struct AnalyticsView: View {
     private let spacing: CGFloat = 3
     private let cellSize: CGFloat = 22
 
+    private var heatmapWidth: CGFloat {
+        CGFloat(cols) * cellSize + CGFloat(cols - 1) * spacing
+    }
+
     // MARK: - Data
 
     /// 35 dates, index 0 = oldest (34 days ago), index 34 = today
@@ -154,31 +158,38 @@ struct AnalyticsView: View {
             }
 
             VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: spacing) {
-                    ForEach(Array(weekdayLabels.enumerated()), id: \.offset) { _, label in
-                        Text(label)
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
-                            .frame(width: cellSize)
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: spacing) {
+                        ForEach(Array(weekdayLabels.enumerated()), id: \.offset) { _, label in
+                            Text(label)
+                                .font(.system(size: 9, weight: .semibold))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.75)
+                                .foregroundColor(.secondary)
+                                .frame(width: cellSize)
+                        }
+                    }
+
+                    let datesArr = dates
+                    LazyVGrid(
+                        columns: Array(repeating: GridItem(.fixed(cellSize), spacing: spacing), count: cols),
+                        alignment: .leading,
+                        spacing: spacing
+                    ) {
+                        ForEach(0..<(cols * rows), id: \.self) { i in
+                            let date = datesArr[i]
+                            let lv = level(for: date)
+
+                            RoundedRectangle(cornerRadius: 5)
+                                .fill(cellColor(lv))
+                                .frame(width: cellSize, height: cellSize)
+                                .help(tooltip(date: date))
+                        }
                     }
                 }
-
-                let datesArr = dates
-                LazyVGrid(
-                    columns: Array(repeating: GridItem(.fixed(cellSize), spacing: spacing), count: cols),
-                    spacing: spacing
-                ) {
-                    ForEach(0..<(cols * rows), id: \.self) { i in
-                        let date = datesArr[i]
-                        let lv = level(for: date)
-
-                        RoundedRectangle(cornerRadius: 5)
-                            .fill(cellColor(lv))
-                            .frame(width: cellSize, height: cellSize)
-                            .help(tooltip(date: date))
-                    }
-                }
+                .frame(width: heatmapWidth, alignment: .leading)
             }
+            .frame(maxWidth: .infinity, alignment: .center)
 
             // Legend
             HStack(spacing: 4) {
