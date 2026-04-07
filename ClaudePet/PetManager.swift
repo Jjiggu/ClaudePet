@@ -435,6 +435,7 @@ final class PetManager: ObservableObject {
         guard cooldownRemaining <= 0 else {
             rememberRetryWindow(seconds: cooldownRemaining)
             if hasUsageData {
+                errorMessage = nil
                 usageStatusMessage = "Showing last usage while waiting to retry.\(retryHint())"
             }
             return .skippedCooldown(cooldownRemaining)
