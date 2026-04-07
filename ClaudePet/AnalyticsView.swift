@@ -179,14 +179,16 @@ struct AnalyticsView: View {
     // MARK: - Body
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 20) {
             usageTrendCard
+            Divider()
+                .padding(.vertical, 4)
             activityHistorySection
         }
     }
 
     private var usageTrendCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .firstTextBaseline) {
                 Text("Usage Trend")
                     .font(.caption)
@@ -210,7 +212,6 @@ struct AnalyticsView: View {
                 points: trendPoints,
                 accent: Color(red: 0.52, green: 0.37, blue: 0.92)
             )
-            .frame(height: 108)
 
             HStack(spacing: 6) {
                 metricPill(title: "Total", value: compactTokens(recentWeekTotal))
@@ -232,7 +233,7 @@ struct AnalyticsView: View {
     }
 
     private var activityHistorySection: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 14) {
             HStack {
                 Text("Activity History")
                     .font(.caption)
@@ -386,235 +387,163 @@ private struct UsageTrendChartView: View {
     let accent: Color
 
     @State private var hoveredIndex: Int?
+    @Environment(\.colorScheme) private var colorScheme
 
-    private let horizontalInset: CGFloat = 8
-    private let topInset: CGFloat = 10
-    private let bottomInset: CGFloat = 10
-    private let plotHeight: CGFloat = 86
+    private let inset: CGFloat = 8
+    private let vpad: CGFloat = 8
 
-    private var hasUsage: Bool {
-        points.contains { $0.tokens > 0 }
-    }
+    private var hasUsage: Bool { points.contains { $0.tokens > 0 } }
 
-    private var focusedIndex: Int? {
-        guard hasUsage, !points.isEmpty else { return nil }
-        return hoveredIndex
-    }
-
-    private var readoutPoint: UsageTrendPoint? {
-        guard hasUsage, !points.isEmpty else { return nil }
-        if let hoveredIndex {
-            return points[hoveredIndex]
-        }
-        return points.last
-    }
-
-    private static let tooltipDateFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "MMM d"
-        return f
+    private static let dateFmt: DateFormatter = {
+        let f = DateFormatter(); f.dateFormat = "MMM d"; return f
     }()
 
+    private func compactTokens(_ v: Int) -> String {
+        let n = Double(v)
+        if n >= 1_000_000_000 { return String(format: "%.1fB tokens", n / 1_000_000_000) }
+        if n >= 1_000_000     { return String(format: "%.1fM tokens", n / 1_000_000) }
+        if n >= 10_000        { return String(format: "%.0fK tokens", n / 1_000) }
+        if n >= 1_000         { return String(format: "%.1fK tokens", n / 1_000) }
+        return "\(v.formatted()) tokens"
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            GeometryReader { proxy in
-                let size = proxy.size
-                let chartPoints = plotPoints(in: size)
+        GeometryReader { geo in
+            let w = geo.size.width
+            let h = geo.size.height
+            let n = points.count
+            let maxVal = CGFloat(points.map(\.tokens).max() ?? 1)
+            let stepX = n > 1 ? (w - inset * 2) / CGFloat(n - 1) : 0
 
-                ZStack {
-                    RoundedRectangle(cornerRadius: 13, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    accent.opacity(0.08),
-                                    Color.primary.opacity(0.025)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
+            let pts: [CGPoint] = points.enumerated().map { i, p in
+                let x = n > 1 ? inset + CGFloat(i) * stepX : w / 2
+                let normalized = maxVal > 0 ? CGFloat(p.tokens) / maxVal : 0
+                let y = (h - vpad) - normalized * (h - vpad * 2)
+                return CGPoint(x: x, y: max(vpad, y))
+            }
 
-                    if hasUsage, chartPoints.count > 1 {
-                        smoothPath(points: chartPoints, closingAt: size.height - bottomInset)
-                            .fill(
-                                LinearGradient(
-                                    colors: [
-                                        accent.opacity(0.34),
-                                        accent.opacity(0.05)
-                                    ],
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                )
-                            )
+            ZStack {
+                // Background card
+                RoundedRectangle(cornerRadius: 13, style: .continuous)
+                    .fill(LinearGradient(
+                        colors: [accent.opacity(0.08), Color.primary.opacity(0.025)],
+                        startPoint: .topLeading, endPoint: .bottomTrailing
+                    ))
 
-                        smoothPath(points: chartPoints)
-                            .stroke(
-                                accent,
-                                style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round)
-                            )
-
-                        if let focusedIndex {
-                            focusedOverlay(
-                                focusedIndex: focusedIndex,
-                                chartPoints: chartPoints,
-                                size: size
-                            )
+                if hasUsage, pts.count >= 2 {
+                    // Area fill
+                    Path { path in
+                        path.move(to: CGPoint(x: pts[0].x, y: h))
+                        path.addLine(to: pts[0])
+                        for i in 1..<pts.count {
+                            let a = pts[i - 1], b = pts[i]
+                            let mx = (a.x + b.x) / 2
+                            path.addCurve(to: b,
+                                          control1: CGPoint(x: mx, y: a.y),
+                                          control2: CGPoint(x: mx, y: b.y))
                         }
-                    } else {
-                        emptyChart(in: size)
+                        path.addLine(to: CGPoint(x: pts.last!.x, y: h))
+                        path.closeSubpath()
                     }
-                }
-                .contentShape(Rectangle())
-                .onContinuousHover { phase in
-                    switch phase {
-                    case .active(let location):
-                        hoveredIndex = nearestIndex(for: location.x, in: size)
-                    case .ended:
-                        hoveredIndex = nil
+                    .fill(LinearGradient(
+                        colors: [accent.opacity(0.28), accent.opacity(0.04)],
+                        startPoint: .top, endPoint: .bottom
+                    ))
+
+                    // Stroke line
+                    Path { path in
+                        path.move(to: pts[0])
+                        for i in 1..<pts.count {
+                            let a = pts[i - 1], b = pts[i]
+                            let mx = (a.x + b.x) / 2
+                            path.addCurve(to: b,
+                                          control1: CGPoint(x: mx, y: a.y),
+                                          control2: CGPoint(x: mx, y: b.y))
+                        }
                     }
+                    .stroke(accent.opacity(0.8),
+                            style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+
+                    if let idx = hoveredIndex, idx < pts.count {
+                        let pt  = pts[idx]
+                        let p   = points[idx]
+
+                        // Vertical crosshair
+                        Path { path in
+                            path.move(to: CGPoint(x: pt.x, y: vpad))
+                            path.addLine(to: CGPoint(x: pt.x, y: h - vpad))
+                        }
+                        .stroke(accent.opacity(0.25),
+                                style: StrokeStyle(lineWidth: 1, dash: [3, 4]))
+
+                        // Dot
+                        Circle()
+                            .fill(accent)
+                            .frame(width: 7, height: 7)
+                            .overlay(Circle().stroke(Color.white.opacity(0.9), lineWidth: 1.5))
+                            .position(pt)
+
+                        // Tooltip
+                        let tipW: CGFloat = 112
+                        let tipH: CGFloat = 38
+                        let tipX  = min(max(pt.x, tipW / 2 + 6), w - tipW / 2 - 6)
+                        let tipAbove = pt.y - tipH / 2 - 14
+                        let tipY  = tipAbove < vpad ? pt.y + tipH / 2 + 14 : tipAbove
+
+                        VStack(spacing: 2) {
+                            Text(Self.dateFmt.string(from: p.date))
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundColor(.secondary)
+                            Text(compactTokens(p.tokens))
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundColor(.primary.opacity(0.85))
+                        }
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 4)
+                        .frame(width: tipW, height: tipH)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .fill(Color(nsColor: .controlBackgroundColor))
+                                .shadow(color: Color.black.opacity(
+                                    colorScheme == .dark ? 0.25 : 0.08
+                                ), radius: 4, y: 1)
+                        )
+                        .position(x: tipX, y: tipY)
+
+                    } else if let last = pts.last {
+                        // Resting dot at latest data point
+                        Circle()
+                            .fill(accent.opacity(0.7))
+                            .frame(width: 4, height: 4)
+                            .position(last)
+                    }
+                } else {
+                    // Empty state
+                    Path { path in
+                        let y = h - vpad
+                        path.move(to: CGPoint(x: inset, y: y))
+                        path.addLine(to: CGPoint(x: w - inset, y: y))
+                    }
+                    .stroke(Color.primary.opacity(0.14),
+                            style: StrokeStyle(lineWidth: 1.5, dash: [4, 5]))
+
+                    Text("No recent activity")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
                 }
             }
-            .frame(height: plotHeight)
-
-            hoverReadout
-        }
-    }
-
-    private func focusedOverlay(focusedIndex: Int, chartPoints: [CGPoint], size: CGSize) -> some View {
-        let point = chartPoints[focusedIndex]
-
-        return ZStack {
-            Path { path in
-                path.move(to: CGPoint(x: point.x, y: topInset))
-                path.addLine(to: CGPoint(x: point.x, y: size.height - bottomInset))
-            }
-            .stroke(accent.opacity(0.18), style: StrokeStyle(lineWidth: 1, dash: [3, 4]))
-
-            Circle()
-                .fill(accent)
-                .frame(width: 6, height: 6)
-                .overlay(
-                    Circle()
-                        .stroke(Color.white.opacity(0.90), lineWidth: 1.2)
-                )
-                .position(point)
-        }
-    }
-
-    private func emptyChart(in size: CGSize) -> some View {
-        ZStack {
-            Path { path in
-                let y = size.height - bottomInset
-                path.move(to: CGPoint(x: horizontalInset, y: y))
-                path.addLine(to: CGPoint(x: size.width - horizontalInset, y: y))
-            }
-            .stroke(Color.primary.opacity(0.14), style: StrokeStyle(lineWidth: 1.5, dash: [4, 5]))
-
-            Text("No recent activity")
-                .font(.caption2)
-                .foregroundColor(.secondary)
-        }
-    }
-
-    private var hoverReadout: some View {
-        HStack(spacing: 5) {
-            Circle()
-                .fill(hoveredIndex == nil ? Color.secondary.opacity(0.45) : accent)
-                .frame(width: 4, height: 4)
-
-            if let readoutPoint {
-                Text(readoutText(for: readoutPoint))
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundColor(.secondary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.75)
-            } else {
-                Spacer(minLength: 0)
+            .contentShape(Rectangle())
+            .onContinuousHover { phase in
+                switch phase {
+                case .active(let loc):
+                    guard hasUsage, n > 1 else { hoveredIndex = nil; return }
+                    let idx = Int(((loc.x - inset) / stepX).rounded())
+                    hoveredIndex = min(max(idx, 0), n - 1)
+                case .ended:
+                    hoveredIndex = nil
+                }
             }
         }
-        .frame(height: 16)
-    }
-
-    private func readoutText(for point: UsageTrendPoint) -> String {
-        "\(Self.tooltipDateFormatter.string(from: point.date)) · \(point.tokens.formatted()) tokens · \(averageComparisonText(for: point))"
-    }
-
-    private func averageComparisonText(for point: UsageTrendPoint) -> String {
-        let total = points.reduce(0) { $0 + $1.tokens }
-        let average = total / max(points.count, 1)
-        guard average > 0 else { return "No 7-day avg" }
-
-        let delta = point.tokens - average
-        let percent = Int((Double(abs(delta)) / Double(average) * 100).rounded())
-        if delta > 0 {
-            return "+\(percent)% vs 7-day avg"
-        } else if delta < 0 {
-            return "-\(percent)% vs 7-day avg"
-        }
-        return "On par with 7-day avg"
-    }
-
-    private func plotPoints(in size: CGSize) -> [CGPoint] {
-        guard !points.isEmpty else { return [] }
-
-        let maxValue = max(points.map(\.tokens).max() ?? 0, 1)
-        let plotWidth = max(size.width - horizontalInset * 2, 1)
-        let plotHeight = max(size.height - topInset - bottomInset, 1)
-        let denominator = max(points.count - 1, 1)
-
-        return points.enumerated().map { index, point in
-            let x = horizontalInset + plotWidth * CGFloat(index) / CGFloat(denominator)
-            let normalized = CGFloat(Double(point.tokens) / Double(maxValue))
-            let y = topInset + plotHeight * (1 - normalized)
-            return CGPoint(x: x, y: y)
-        }
-    }
-
-    private func nearestIndex(for x: CGFloat, in size: CGSize) -> Int? {
-        guard !points.isEmpty else { return nil }
-
-        let plotWidth = max(size.width - horizontalInset * 2, 1)
-        let clampedX = min(max(x, horizontalInset), size.width - horizontalInset)
-        let progress = (clampedX - horizontalInset) / plotWidth
-        let rawIndex = Int((progress * CGFloat(points.count - 1)).rounded())
-        return min(max(rawIndex, 0), points.count - 1)
-    }
-
-    private func smoothPath(points: [CGPoint], closingAt bottom: CGFloat? = nil) -> Path {
-        var path = Path()
-        guard let first = points.first else { return path }
-
-        if let bottom {
-            path.move(to: CGPoint(x: first.x, y: bottom))
-            path.addLine(to: first)
-        } else {
-            path.move(to: first)
-        }
-
-        if points.count == 1 {
-            path.addLine(to: first)
-        } else {
-            for index in 1..<points.count {
-                let previous = points[index - 1]
-                let current = points[index]
-                let mid = CGPoint(
-                    x: (previous.x + current.x) / 2,
-                    y: (previous.y + current.y) / 2
-                )
-                path.addQuadCurve(to: mid, control: previous)
-            }
-
-            if let last = points.last {
-                path.addLine(to: last)
-            }
-        }
-
-        if let bottom, let last = points.last {
-            path.addLine(to: CGPoint(x: last.x, y: bottom))
-            path.addLine(to: CGPoint(x: first.x, y: bottom))
-            path.closeSubpath()
-        }
-
-        return path
+        .frame(height: 136)
     }
 }
