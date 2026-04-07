@@ -93,20 +93,20 @@ struct AnalyticsView: View {
 
     private var weeklyTrendText: String {
         if recentWeekTotal == 0 && previousWeekTotal == 0 {
-            return "최근 2주 활동이 아직 없어요"
+            return "No activity in the last 2 weeks"
         }
         if previousWeekTotal == 0 {
-            return "지난주보다 새롭게 사용량이 생겼어요"
+            return "New activity this week"
         }
 
         let delta = recentWeekTotal - previousWeekTotal
         let percent = Int((Double(abs(delta)) / Double(previousWeekTotal) * 100).rounded())
         if delta > 0 {
-            return "이전 7일보다 \(percent)% 더 많이 사용했어요"
+            return "\(percent)% more than the previous 7 days"
         } else if delta < 0 {
-            return "이전 7일보다 \(percent)% 적게 사용했어요"
+            return "\(percent)% less than the previous 7 days"
         } else {
-            return "이전 7일과 거의 같은 페이스예요"
+            return "Same pace as the previous 7 days"
         }
     }
 
@@ -142,7 +142,7 @@ struct AnalyticsView: View {
 
     private static let tooltipDate: DateFormatter = {
         let f = DateFormatter()
-        f.dateFormat = "M월 d일"
+        f.dateFormat = "MMM d"
         return f
     }()
 
@@ -157,7 +157,7 @@ struct AnalyticsView: View {
         let dateStr = Self.tooltipDate.string(from: date)
         return tokens > 0
             ? "\(dateStr): \(tokens.formatted()) tokens"
-            : "\(dateStr): 사용 없음"
+            : "\(dateStr): No activity"
     }
 
     private func compactTokens(_ value: Int) -> String {
@@ -239,7 +239,7 @@ struct AnalyticsView: View {
                     .fontWeight(.semibold)
                     .lineLimit(1)
                 Spacer()
-                Text("최근 35일")
+                Text("Last 35 days")
                     .font(.caption2)
                     .foregroundColor(.secondary)
                     .lineLimit(1)
@@ -285,46 +285,46 @@ struct AnalyticsView: View {
 
             if !dailyUsage.isEmpty {
                 HStack {
-                    Text("35일간 \(activeDays)일 활성")
+                    Text("\(activeDays) active days")
                         .font(.caption2)
                         .foregroundColor(.secondary)
                     Spacer()
-                    Text("총 \(totalTokens.formatted()) tokens")
+                    Text("\(totalTokens.formatted()) tokens total")
                         .font(.caption2)
                         .foregroundColor(.secondary)
                 }
 
                 VStack(spacing: 8) {
                     summaryCard(
-                        title: "연속 활동",
-                        value: activeStreak > 0 ? "\(activeStreak)일째" : "오늘은 휴식",
+                        title: "Streak",
+                        value: activeStreak > 0 ? "\(activeStreak) days" : "No streak",
                         detail: activeStreak > 0
-                            ? "최근 흐름이 이어지고 있어요"
-                            : "다음 사용이 시작되면 다시 쌓여요",
+                            ? "Current streak is going strong"
+                            : "Will start again on your next active day",
                         accent: activeStreak > 0 ? .green : .secondary
                     )
 
                     summaryCard(
-                        title: "활성일 평균",
+                        title: "Daily average",
                         value: "\(averageTokensPerActiveDay.formatted()) tokens",
                         detail: activeDays > 0
-                            ? "토큰을 쓴 날 기준 평균이에요"
-                            : "아직 집계할 활동일이 없어요",
+                            ? "Average across active days only"
+                            : "No active days to average yet",
                         accent: .blue
                     )
 
                     summaryCard(
-                        title: "최근 7일",
-                        value: "\(recentWeekActiveDays)일 활성",
+                        title: "Last 7 days",
+                        value: "\(recentWeekActiveDays) active days",
                         detail: weeklyTrendText,
                         accent: weeklyTrendAccent
                     )
                 }
             } else if !isLoading {
                 summaryCard(
-                    title: "아직 활동 없음",
+                    title: "No activity yet",
                     value: "0 tokens",
-                    detail: "로컬 Claude 사용 기록이 쌓이면 이곳에 표시돼요.",
+                    detail: "Local Claude usage will appear here once recorded.",
                     accent: .secondary
                 )
             }
@@ -345,7 +345,7 @@ struct AnalyticsView: View {
         .padding(.horizontal, 9)
         .padding(.vertical, 6)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white.opacity(0.55), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
     private func summaryCard(title: String, value: String, detail: String, accent: Color) -> some View {
@@ -362,7 +362,7 @@ struct AnalyticsView: View {
 
             Text(value)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(.primary)
+                .foregroundColor(.primary.opacity(0.75))
 
             Text(detail)
                 .font(.caption2)
@@ -411,7 +411,7 @@ private struct UsageTrendChartView: View {
 
     private static let tooltipDateFormatter: DateFormatter = {
         let f = DateFormatter()
-        f.dateFormat = "M월 d일"
+        f.dateFormat = "MMM d"
         return f
     }()
 
@@ -510,7 +510,7 @@ private struct UsageTrendChartView: View {
             }
             .stroke(Color.primary.opacity(0.14), style: StrokeStyle(lineWidth: 1.5, dash: [4, 5]))
 
-            Text("최근 사용 기록이 아직 없어요")
+            Text("No recent activity")
                 .font(.caption2)
                 .foregroundColor(.secondary)
         }
@@ -542,16 +542,16 @@ private struct UsageTrendChartView: View {
     private func averageComparisonText(for point: UsageTrendPoint) -> String {
         let total = points.reduce(0) { $0 + $1.tokens }
         let average = total / max(points.count, 1)
-        guard average > 0 else { return "7일 평균 데이터 없음" }
+        guard average > 0 else { return "No 7-day avg" }
 
         let delta = point.tokens - average
         let percent = Int((Double(abs(delta)) / Double(average) * 100).rounded())
         if delta > 0 {
-            return "7일 평균보다 +\(percent)%"
+            return "+\(percent)% vs 7-day avg"
         } else if delta < 0 {
-            return "7일 평균보다 -\(percent)%"
+            return "-\(percent)% vs 7-day avg"
         }
-        return "7일 평균과 비슷해요"
+        return "On par with 7-day avg"
     }
 
     private func plotPoints(in size: CGSize) -> [CGPoint] {
