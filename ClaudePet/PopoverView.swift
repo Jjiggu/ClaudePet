@@ -58,14 +58,14 @@ struct PopoverView: View {
                         }
                         .frame(maxWidth: .infinity)
                     }
-                    .frame(height: 360)
+                    .frame(height: 420)
 
                     Divider()
                     bottomBar
                 }
             }
         }
-        .frame(width: 280)
+        .frame(width: 320)
     }
 
     // MARK: - Tab Bar
