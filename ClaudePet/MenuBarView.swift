@@ -11,12 +11,19 @@ struct MenuBarView: View {
     @ObservedObject var petManager: PetManager
 
     private var statusSummary: String {
-        if let errorMessage = petManager.errorMessage {
+        if let errorMessage = petManager.errorMessage, !petManager.hasUsageData {
             return errorMessage.replacingOccurrences(of: "\n", with: " ")
         }
 
         if let session = petManager.fiveHour {
-            return "\(petManager.petType.displayName), session usage \(Int(session.utilization))%"
+            let base = "\(petManager.petType.displayName), session usage \(Int(session.utilization))%"
+            if let errorMessage = petManager.errorMessage {
+                return "\(base). \(errorMessage.replacingOccurrences(of: "\n", with: " "))"
+            }
+            if petManager.isUsingCachedUsage {
+                return "\(base). Showing cached usage"
+            }
+            return base
         }
 
         return "Checking Claude usage"
@@ -24,7 +31,7 @@ struct MenuBarView: View {
 
     var body: some View {
         HStack(spacing: 4) {
-            if petManager.errorMessage != nil {
+            if petManager.errorMessage != nil && !petManager.hasUsageData {
                 Text("⚠️").font(.system(size: 13))
             } else {
                 let mode = petManager.menuBarDisplayMode

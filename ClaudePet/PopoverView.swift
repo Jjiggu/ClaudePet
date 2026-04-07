@@ -168,9 +168,17 @@ struct PopoverView: View {
                 let seconds = Int(Date().timeIntervalSince(lastRefreshAt))
                 HStack(spacing: 5) {
                     Circle()
-                        .fill(seconds < 300 ? Color.green : Color.secondary.opacity(0.45))
+                        .fill(
+                            petManager.isUsingCachedUsage
+                                ? Color.orange
+                                : (seconds < 300 ? Color.green : Color.secondary.opacity(0.45))
+                        )
                         .frame(width: 5, height: 5)
-                    Text(shortRelativeTime(from: lastRefreshAt))
+                    if let retryAt = petManager.nextUsageRetryAt, retryAt > Date() {
+                        Text("Retry \(shortRemainingTime(until: retryAt))")
+                    } else {
+                        Text(shortRelativeTime(from: lastRefreshAt))
+                    }
                 }
                 .font(.caption2)
                 .foregroundColor(.secondary)
@@ -184,6 +192,14 @@ struct PopoverView: View {
         let minutes = seconds / 60
         guard minutes < 60 else { return "\(minutes / 60)h ago" }
         return "\(minutes) min ago"
+    }
+
+    private func shortRemainingTime(until date: Date) -> String {
+        let seconds = max(Int(date.timeIntervalSinceNow.rounded(.up)), 0)
+        guard seconds >= 60 else { return "in \(seconds)s" }
+        let minutes = Int(ceil(Double(seconds) / 60.0))
+        guard minutes < 60 else { return "in \(minutes / 60)h" }
+        return "in \(minutes) min"
     }
 }
 
@@ -244,10 +260,11 @@ private struct MainView: View {
     }
 
     private func usageBanner(_ banner: UsageBannerState) -> some View {
-        HStack(alignment: .top, spacing: 8) {
-            Image(systemName: banner.style == .error ? "exclamationmark.triangle.fill" : "arrow.clockwise.circle.fill")
+        let isError = banner.style == .error
+        return HStack(alignment: .top, spacing: 8) {
+            Image(systemName: isError ? "exclamationmark.triangle.fill" : "clock.arrow.circlepath")
                 .font(.system(size: 11, weight: .semibold))
-                .foregroundColor(banner.style == .error ? .orange : .accentColor)
+                .foregroundColor(isError ? .orange : .accentColor)
 
             Text(banner.message)
                 .font(.caption)
@@ -258,7 +275,7 @@ private struct MainView: View {
         }
         .padding(10)
         .background(
-            (banner.style == .error ? Color.orange : Color.accentColor)
+            (isError ? Color.orange : Color.accentColor)
                 .opacity(0.10),
             in: RoundedRectangle(cornerRadius: 8)
         )

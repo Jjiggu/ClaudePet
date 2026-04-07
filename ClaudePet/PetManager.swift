@@ -136,6 +136,8 @@ final class PetManager: ObservableObject {
     @Published private(set) var authState: AuthState = .missing
     @Published private(set) var planName: String?
     @Published private(set) var isUsingCachedUsage = false
+    @Published private(set) var usageStatusMessage: String?
+    @Published private(set) var nextUsageRetryAt: Date?
 
     @Published var petType: PetType {
         didSet { UserDefaults.standard.set(petType.rawValue, forKey: "selectedPetType") }
@@ -273,8 +275,18 @@ final class PetManager: ObservableObject {
         UsageViewState.resolve(
             hasUsageData: hasUsageData,
             isLoading: isLoading,
-            errorMessage: errorMessage
+            errorMessage: errorMessage,
+            statusMessage: usageStatusBannerMessage
         )
+    }
+
+    private var usageStatusBannerMessage: String? {
+        if let usageStatusMessage {
+            return usageStatusMessage
+        }
+
+        guard isUsingCachedUsage, hasUsageData else { return nil }
+        return "Showing cached usage from the last successful check."
     }
 
     var authSourceDisplayName: String {
@@ -421,6 +433,11 @@ final class PetManager: ObservableObject {
 
         let cooldownRemaining = usageFetchCooldownRemaining()
         guard cooldownRemaining <= 0 else {
+            rememberRetryWindow(seconds: cooldownRemaining)
+            if hasUsageData {
+                errorMessage = nil
+                usageStatusMessage = "Showing last usage while waiting to retry.\(retryHint())"
+            }
             return .skippedCooldown(cooldownRemaining)
         }
 
@@ -440,6 +457,8 @@ final class PetManager: ObservableObject {
 
         isLoading = true
         errorMessage = nil
+        usageStatusMessage = nil
+        nextUsageRetryAt = nil
         recordUsageFetchAttempt(at: Date())
 
         do {
@@ -448,33 +467,54 @@ final class PetManager: ObservableObject {
             applyUsage(usage)
             lastUsageRefreshAt = refreshedAt
             isUsingCachedUsage = false
+            usageStatusMessage = nil
+            nextUsageRetryAt = nil
             persistUsageSnapshot(usage, fetchedAt: refreshedAt)
             updateRateLimitBackoff(60)
         } catch UsageAPIClientError.payloadMessage(let message) {
-            if fiveHour == nil { errorMessage = message }
+            errorMessage = hasUsageData
+                ? "Couldn’t refresh usage. Showing last saved data.\n\(message)"
+                : message
         } catch UsageAPIClientError.unauthorized {
-            errorMessage = "Token expired.\nRun `claude login` again."
+            errorMessage = hasUsageData
+                ? "Token expired. Showing cached usage.\nRun `claude login` again."
+                : "Token expired.\nRun `claude login` again."
         } catch UsageAPIClientError.rateLimited {
-            updateRateLimitBackoff(min(rateLimitBackoff * 2, 1800))
-            recordUsageFetchAttempt(at: Date())
+            let newBackoff = min(rateLimitBackoff * 2, 1800)
+            updateRateLimitBackoff(newBackoff)
+            let attemptAt = Date()
+            recordUsageFetchAttempt(at: attemptAt)
+            rememberRetryWindow(from: attemptAt)
             if fiveHour == nil {
                 errorMessage = "Rate limited by API.\nWill retry automatically."
+            } else {
+                usageStatusMessage = "Rate limited by API. Showing cached usage.\(retryHint())"
             }
         } catch UsageAPIClientError.api(let statusCode) {
-            errorMessage = "API error \(statusCode)"
+            errorMessage = hasUsageData
+                ? "API error \(statusCode). Showing last saved data."
+                : "API error \(statusCode)"
         } catch UsageAPIClientError.decoding(let error, let rawBody) {
-            errorMessage = "Unexpected API response.\nCheck app update."
+            errorMessage = hasUsageData
+                ? "Unexpected API response. Showing last saved data.\nCheck app update."
+                : "Unexpected API response.\nCheck app update."
             print("[ClaudePet] Decode error: \(error)")
             if let rawBody {
                 print("[ClaudePet] Raw body: \(rawBody)")
             }
         } catch UsageAPIClientError.invalidResponse {
-            errorMessage = "Unexpected API response.\nCheck app update."
+            errorMessage = hasUsageData
+                ? "Unexpected API response. Showing last saved data.\nCheck app update."
+                : "Unexpected API response.\nCheck app update."
         } catch {
             if let urlError = error as? URLError, urlError.code == .userAuthenticationRequired {
-                errorMessage = "Token expired.\nRun `claude login` again."
+                errorMessage = hasUsageData
+                    ? "Token expired. Showing cached usage.\nRun `claude login` again."
+                    : "Token expired.\nRun `claude login` again."
             } else {
-                errorMessage = error.localizedDescription
+                errorMessage = hasUsageData
+                    ? "Couldn’t refresh usage. Showing last saved data.\n\(error.localizedDescription)"
+                    : error.localizedDescription
             }
         }
 
@@ -497,11 +537,28 @@ final class PetManager: ObservableObject {
         UserDefaults.standard.set(seconds, forKey: Self.rateLimitBackoffKey)
     }
 
+    private func rememberRetryWindow(from attemptAt: Date? = nil, seconds: TimeInterval? = nil) {
+        let base = attemptAt ?? Date()
+        let wait = seconds ?? max(minFetchInterval, rateLimitBackoff)
+        nextUsageRetryAt = base.addingTimeInterval(max(wait, 1))
+    }
+
+    private func retryHint() -> String {
+        guard let nextUsageRetryAt else { return "" }
+        let seconds = max(Int(nextUsageRetryAt.timeIntervalSinceNow.rounded(.up)), 0)
+        if seconds < 60 {
+            return " Next retry in \(seconds)s."
+        }
+        let minutes = Int(ceil(Double(seconds) / 60.0))
+        return " Next retry in \(minutes) min."
+    }
+
     private func hydrateUsageFromCache() {
         guard let snapshot = usageSnapshotCache.load() else { return }
         applyUsage(snapshot.usage, shouldNotify: false)
         lastUsageRefreshAt = snapshot.fetchedAt
         isUsingCachedUsage = true
+        usageStatusMessage = nil
 
         if planName == nil {
             planName = snapshot.planName

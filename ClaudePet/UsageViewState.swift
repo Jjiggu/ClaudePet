@@ -25,12 +25,27 @@ struct UsageViewState: Equatable {
     static func resolve(
         hasUsageData: Bool,
         isLoading: Bool,
-        errorMessage: String?
+        errorMessage: String?,
+        statusMessage: String?
     ) -> UsageViewState {
         if let errorMessage, !errorMessage.isEmpty {
             return UsageViewState(
                 showsUsageContent: hasUsageData,
                 banner: UsageBannerState(style: .error, message: errorMessage)
+            )
+        }
+
+        if let statusMessage, !statusMessage.isEmpty {
+            return UsageViewState(
+                showsUsageContent: hasUsageData,
+                banner: UsageBannerState(style: .info, message: statusMessage)
+            )
+        }
+
+        if isLoading && hasUsageData {
+            return UsageViewState(
+                showsUsageContent: true,
+                banner: UsageBannerState(style: .info, message: "Checking for newer usage...")
             )
         }
 
