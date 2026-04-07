@@ -295,9 +295,23 @@ final class PetManager: ObservableObject {
     private var didSendThresholdAlert = false
     private var rateLimitBackoff: Double = 60   // seconds; doubles on each 429, resets on success
     private var lastFetchTime: Date = .distantPast  // minimum 60s between requests
+    private var lastPlanFetchTime: Date = .distantPast
     private var isInitialized = false           // blocks didSet observers during init
     private let usageClient = UsageAPIClient()
     private let minFetchInterval: Double = 60   // never request more than once per minute
+    private let planCacheTTL: TimeInterval = 24 * 60 * 60
+
+    private enum UsageFetchResult {
+        case sentRequest
+        case skippedCooldown(TimeInterval)
+        case skippedInFlight
+        case skippedMissingAuth
+    }
+
+    private static let lastUsageFetchAttemptAtKey = "lastUsageFetchAttemptAt"
+    private static let rateLimitBackoffKey = "rateLimitBackoff"
+    private static let cachedPlanNameKey = "cachedPlanName"
+    private static let lastPlanFetchAtKey = "lastPlanFetchAt"
 
     init() {
         let saved = UserDefaults.standard.string(forKey: "selectedPetType") ?? ""
@@ -309,6 +323,10 @@ final class PetManager: ObservableObject {
         refreshInterval = UserDefaults.standard.object(forKey: "refreshInterval") as? Int ?? 300
         notificationsEnabled = UserDefaults.standard.bool(forKey: "notificationsEnabled")
         notificationThreshold = UserDefaults.standard.object(forKey: "notificationThreshold") as? Double ?? 0.8
+        lastFetchTime = UserDefaults.standard.object(forKey: Self.lastUsageFetchAttemptAtKey) as? Date ?? .distantPast
+        rateLimitBackoff = UserDefaults.standard.object(forKey: Self.rateLimitBackoffKey) as? Double ?? 60
+        planName = UserDefaults.standard.string(forKey: Self.cachedPlanNameKey)
+        lastPlanFetchTime = UserDefaults.standard.object(forKey: Self.lastPlanFetchAtKey) as? Date ?? .distantPast
         isInitialized = true
         refreshAuthStatus()
         startPolling()
@@ -323,11 +341,20 @@ final class PetManager: ObservableObject {
     }
 
     func fetchPlanInfo() {
+        guard Date().timeIntervalSince(lastPlanFetchTime) >= planCacheTTL else { return }
         guard let token = authState.token else { return }
         Task {
+            let fetchStartedAt = Date()
+            defer {
+                lastPlanFetchTime = fetchStartedAt
+                UserDefaults.standard.set(fetchStartedAt, forKey: Self.lastPlanFetchAtKey)
+            }
+
             do {
                 if let rawPlan = try await usageClient.fetchPlanName(token: token) {
-                    planName = formatPlanName(rawPlan)
+                    let formattedPlanName = formatPlanName(rawPlan)
+                    planName = formattedPlanName
+                    UserDefaults.standard.set(formattedPlanName, forKey: Self.cachedPlanNameKey)
                 }
             } catch {
                 print("[ClaudePet] account endpoint unavailable or failed")
@@ -361,64 +388,68 @@ final class PetManager: ObservableObject {
 
     func startPolling() {
         pollTask?.cancel()
+        guard refreshInterval > 0 else { return }
         pollTask = Task {
-            await fetchUsage()
             while !Task.isCancelled {
+                let result = await fetchUsage()
                 let interval = refreshInterval
                 guard interval > 0 else { break }
-                // Use whichever is larger: user interval or current backoff
-                let wait = max(Double(interval), rateLimitBackoff)
+                let wait: TimeInterval
+                if case .skippedCooldown(let remaining) = result {
+                    wait = max(remaining, 1)
+                } else {
+                    // Use whichever is larger: user interval or current backoff
+                    wait = max(Double(interval), rateLimitBackoff)
+                }
                 try? await Task.sleep(for: .seconds(wait))
-                await fetchUsage()
             }
         }
     }
 
     func refresh() {
-        Task { await fetchUsage(force: true) }
+        Task { await fetchUsage() }
     }
 
     // MARK: - Fetch
 
-    private func fetchUsage(force: Bool = false) async {
-        guard !isFetching else { return }   // prevent concurrent fetches
+    private func fetchUsage() async -> UsageFetchResult {
+        guard !isFetching else { return .skippedInFlight }   // prevent concurrent fetches
 
-        // Enforce minimum interval — never hammer the API faster than once per 60s
-        if !force {
-            let elapsed = Date().timeIntervalSince(lastFetchTime)
-            if elapsed < minFetchInterval {
-                try? await Task.sleep(for: .seconds(minFetchInterval - elapsed))
-            }
+        let cooldownRemaining = usageFetchCooldownRemaining()
+        guard cooldownRemaining <= 0 else {
+            return .skippedCooldown(cooldownRemaining)
         }
 
         isFetching = true
-        defer { isFetching = false }
+        defer {
+            isFetching = false
+            isLoading = false
+        }
 
         let currentAuthState = AuthLoader.loadAuthState()
         authState = currentAuthState
 
         guard let token = currentAuthState.token else {
             errorMessage = "No OAuth token.\nRun `claude login` in Terminal."
-            isLoading = false
-            return
+            return .skippedMissingAuth
         }
 
         isLoading = true
         errorMessage = nil
-        lastFetchTime = Date()
+        recordUsageFetchAttempt(at: Date())
 
         do {
             let usage = try await usageClient.fetchUsage(token: token)
             applyUsage(usage)
             lastUsageRefreshAt = Date()
-            rateLimitBackoff = 60
+            updateRateLimitBackoff(60)
         } catch UsageAPIClientError.payloadMessage(let message) {
             if fiveHour == nil { errorMessage = message }
         } catch UsageAPIClientError.unauthorized {
             errorMessage = "Token expired.\nRun `claude login` again."
         } catch UsageAPIClientError.rateLimited {
-            rateLimitBackoff = min(rateLimitBackoff * 2, 1800)
-            lastFetchTime = Date()
+            updateRateLimitBackoff(min(rateLimitBackoff * 2, 1800))
+            recordUsageFetchAttempt(at: Date())
             if fiveHour == nil {
                 errorMessage = "Rate limited by API.\nWill retry automatically."
             }
@@ -440,7 +471,23 @@ final class PetManager: ObservableObject {
             }
         }
 
-        isLoading = false
+        return .sentRequest
+    }
+
+    private func usageFetchCooldownRemaining(now: Date = Date()) -> TimeInterval {
+        guard lastFetchTime != .distantPast else { return 0 }
+        let cooldown = max(minFetchInterval, rateLimitBackoff)
+        return max(lastFetchTime.addingTimeInterval(cooldown).timeIntervalSince(now), 0)
+    }
+
+    private func recordUsageFetchAttempt(at date: Date) {
+        lastFetchTime = date
+        UserDefaults.standard.set(date, forKey: Self.lastUsageFetchAttemptAtKey)
+    }
+
+    private func updateRateLimitBackoff(_ seconds: TimeInterval) {
+        rateLimitBackoff = seconds
+        UserDefaults.standard.set(seconds, forKey: Self.rateLimitBackoffKey)
     }
 
     private func applyUsage(_ usage: OAuthUsageResponse) {

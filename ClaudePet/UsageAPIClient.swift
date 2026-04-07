@@ -84,6 +84,10 @@ struct UsageAPIClient {
             if let raw = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                let apiError = raw["error"] as? [String: Any],
                let message = apiError["message"] as? String {
+                if apiError["type"] as? String == "rate_limit_error"
+                    || message.localizedCaseInsensitiveContains("rate limit") {
+                    throw UsageAPIClientError.rateLimited
+                }
                 throw UsageAPIClientError.payloadMessage(message)
             }
 
@@ -105,7 +109,15 @@ struct UsageAPIClient {
         let request = authorizedRequest(url: accountEndpoint, token: token)
         let (data, response) = try await URLSession.shared.data(for: request)
 
-        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+        guard let http = response as? HTTPURLResponse else {
+            throw UsageAPIClientError.invalidResponse
+        }
+
+        guard http.statusCode != 429 else {
+            throw UsageAPIClientError.rateLimited
+        }
+
+        guard http.statusCode == 200 else {
             throw UsageAPIClientError.invalidResponse
         }
 
