@@ -206,9 +206,9 @@ struct AnalyticsView: View {
                 points: trendPoints,
                 accent: Color(red: 0.52, green: 0.37, blue: 0.92)
             )
-            .frame(height: 116)
+            .frame(height: 108)
 
-            HStack(spacing: 8) {
+            HStack(spacing: 6) {
                 metricPill(title: "Total", value: compactTokens(recentWeekTotal))
                 metricPill(title: "Daily avg", value: compactTokens(recentWeekDailyAverage))
                 metricPill(title: "Best day", value: bestTrendDayLabel)
@@ -225,7 +225,7 @@ struct AnalyticsView: View {
                 Spacer(minLength: 0)
             }
         }
-        .padding(14)
+        .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(Color.primary.opacity(0.045))
@@ -242,10 +242,12 @@ struct AnalyticsView: View {
                 Text("Activity History")
                     .font(.caption)
                     .fontWeight(.semibold)
+                    .lineLimit(1)
                 Spacer()
                 Text("최근 35일")
                     .font(.caption2)
                     .foregroundColor(.secondary)
+                    .lineLimit(1)
             }
 
             VStack(alignment: .leading, spacing: 6) {
@@ -466,7 +468,6 @@ private struct UsageTrendChartView: View {
                     hoveredIndex = nil
                 }
             }
-            .animation(.easeOut(duration: 0.18), value: hoveredIndex)
         }
     }
 
@@ -492,7 +493,9 @@ private struct UsageTrendChartView: View {
                 .position(point)
 
             if showTooltip {
-                tooltip(for: model, in: size, anchoredAt: point)
+                hoverReadout(for: model)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .padding(10)
             }
         }
     }
@@ -512,12 +515,8 @@ private struct UsageTrendChartView: View {
         }
     }
 
-    private func tooltip(for point: UsageTrendPoint, in size: CGSize, anchoredAt anchor: CGPoint) -> some View {
-        let width: CGFloat = 138
-        let x = min(max(anchor.x, width / 2), max(width / 2, size.width - width / 2))
-        let y = max(anchor.y - 38, 24)
-
-        return VStack(alignment: .leading, spacing: 3) {
+    private func hoverReadout(for point: UsageTrendPoint) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
             Text(Self.tooltipDateFormatter.string(from: point.date))
                 .font(.system(size: 10, weight: .semibold))
                 .foregroundColor(.primary.opacity(0.78))
@@ -530,14 +529,13 @@ private struct UsageTrendChartView: View {
         }
         .padding(.horizontal, 9)
         .padding(.vertical, 7)
-        .frame(width: width, alignment: .leading)
+        .frame(width: 138, alignment: .leading)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .stroke(Color.white.opacity(0.45), lineWidth: 1)
         )
         .shadow(color: Color.black.opacity(0.10), radius: 8, x: 0, y: 4)
-        .position(x: x, y: y)
     }
 
     private func averageComparisonText(for point: UsageTrendPoint) -> String {

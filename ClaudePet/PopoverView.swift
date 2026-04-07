@@ -65,7 +65,7 @@ struct PopoverView: View {
                 }
             }
         }
-        .frame(width: 320)
+        .frame(width: 300)
     }
 
     // MARK: - Tab Bar
