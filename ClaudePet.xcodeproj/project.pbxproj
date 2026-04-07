@@ -20,6 +20,7 @@
 		BB00000C000000000000001A /* UsageAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000C000000000000001A /* UsageAPIClient.swift */; };
 		BB00000D000000000000001A /* SpriteFrameCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000D000000000000001A /* SpriteFrameCatalog.swift */; };
 		BB00000E000000000000001A /* UsageViewState.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000E000000000000001A /* UsageViewState.swift */; };
+		BB00000F000000000000001A /* UsageSnapshotCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000F000000000000001A /* UsageSnapshotCache.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -38,6 +39,7 @@
 		AA00000C000000000000001A /* UsageAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageAPIClient.swift; sourceTree = "<group>"; };
 		AA00000D000000000000001A /* SpriteFrameCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpriteFrameCatalog.swift; sourceTree = "<group>"; };
 		AA00000E000000000000001A /* UsageViewState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageViewState.swift; sourceTree = "<group>"; };
+		AA00000F000000000000001A /* UsageSnapshotCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageSnapshotCache.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -68,6 +70,7 @@
 				AA00000C000000000000001A /* UsageAPIClient.swift */,
 				AA00000D000000000000001A /* SpriteFrameCatalog.swift */,
 				AA00000E000000000000001A /* UsageViewState.swift */,
+				AA00000F000000000000001A /* UsageSnapshotCache.swift */,
 			);
 			path = ClaudePet;
 			sourceTree = "<group>";
@@ -169,6 +172,7 @@
 				BB00000C000000000000001A /* UsageAPIClient.swift in Sources */,
 				BB00000D000000000000001A /* SpriteFrameCatalog.swift in Sources */,
 				BB00000E000000000000001A /* UsageViewState.swift in Sources */,
+				BB00000F000000000000001A /* UsageSnapshotCache.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

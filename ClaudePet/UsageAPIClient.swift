@@ -8,7 +8,7 @@
 
 import Foundation
 
-struct UsageQuota: Decodable {
+struct UsageQuota: Codable {
     /// 0–100 percent
     let utilization: Double
     /// nil when API omits or nulls the field (e.g. immediately after a reset)
@@ -23,7 +23,7 @@ struct UsageQuota: Decodable {
     }
 }
 
-struct ExtraUsage: Decodable {
+struct ExtraUsage: Codable {
     let isEnabled: Bool
     /// Spending limit in dollars (e.g. 2000 = $2,000)
     let monthlyLimit: Double
@@ -42,7 +42,7 @@ struct ExtraUsage: Decodable {
     }
 }
 
-struct OAuthUsageResponse: Decodable {
+struct OAuthUsageResponse: Codable {
     let fiveHour: UsageQuota?
     let sevenDay: UsageQuota?
     let sevenDaySonnet: UsageQuota?
