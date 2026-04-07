@@ -135,6 +135,7 @@ final class PetManager: ObservableObject {
     @Published var monthlyTokens: Int = 0
     @Published private(set) var authState: AuthState = .missing
     @Published private(set) var planName: String?
+    @Published private(set) var isUsingCachedUsage = false
 
     @Published var petType: PetType {
         didSet { UserDefaults.standard.set(petType.rawValue, forKey: "selectedPetType") }
@@ -298,6 +299,7 @@ final class PetManager: ObservableObject {
     private var lastPlanFetchTime: Date = .distantPast
     private var isInitialized = false           // blocks didSet observers during init
     private let usageClient = UsageAPIClient()
+    private let usageSnapshotCache = UsageSnapshotCache()
     private let minFetchInterval: Double = 60   // never request more than once per minute
     private let planCacheTTL: TimeInterval = 24 * 60 * 60
 
@@ -327,6 +329,7 @@ final class PetManager: ObservableObject {
         rateLimitBackoff = UserDefaults.standard.object(forKey: Self.rateLimitBackoffKey) as? Double ?? 60
         planName = UserDefaults.standard.string(forKey: Self.cachedPlanNameKey)
         lastPlanFetchTime = UserDefaults.standard.object(forKey: Self.lastPlanFetchAtKey) as? Date ?? .distantPast
+        hydrateUsageFromCache()
         isInitialized = true
         refreshAuthStatus()
         startPolling()
@@ -355,6 +358,7 @@ final class PetManager: ObservableObject {
                     let formattedPlanName = formatPlanName(rawPlan)
                     planName = formattedPlanName
                     UserDefaults.standard.set(formattedPlanName, forKey: Self.cachedPlanNameKey)
+                    persistCurrentUsageSnapshot()
                 }
             } catch {
                 print("[ClaudePet] account endpoint unavailable or failed")
@@ -440,8 +444,11 @@ final class PetManager: ObservableObject {
 
         do {
             let usage = try await usageClient.fetchUsage(token: token)
+            let refreshedAt = Date()
             applyUsage(usage)
-            lastUsageRefreshAt = Date()
+            lastUsageRefreshAt = refreshedAt
+            isUsingCachedUsage = false
+            persistUsageSnapshot(usage, fetchedAt: refreshedAt)
             updateRateLimitBackoff(60)
         } catch UsageAPIClientError.payloadMessage(let message) {
             if fiveHour == nil { errorMessage = message }
@@ -490,14 +497,57 @@ final class PetManager: ObservableObject {
         UserDefaults.standard.set(seconds, forKey: Self.rateLimitBackoffKey)
     }
 
-    private func applyUsage(_ usage: OAuthUsageResponse) {
+    private func hydrateUsageFromCache() {
+        guard let snapshot = usageSnapshotCache.load() else { return }
+        applyUsage(snapshot.usage, shouldNotify: false)
+        lastUsageRefreshAt = snapshot.fetchedAt
+        isUsingCachedUsage = true
+
+        if planName == nil {
+            planName = snapshot.planName
+        }
+    }
+
+    private func persistCurrentUsageSnapshot() {
+        guard let usage = currentUsageResponse, let lastUsageRefreshAt else { return }
+        persistUsageSnapshot(usage, fetchedAt: lastUsageRefreshAt)
+    }
+
+    private func persistUsageSnapshot(_ usage: OAuthUsageResponse, fetchedAt: Date) {
+        do {
+            try usageSnapshotCache.save(
+                CachedUsageSnapshot(
+                    fetchedAt: fetchedAt,
+                    usage: usage,
+                    planName: planName
+                )
+            )
+        } catch {
+            print("[ClaudePet] Failed to persist usage cache: \(error.localizedDescription)")
+        }
+    }
+
+    private var currentUsageResponse: OAuthUsageResponse? {
+        guard hasUsageData else { return nil }
+        return OAuthUsageResponse(
+            fiveHour: fiveHour,
+            sevenDay: sevenDay,
+            sevenDaySonnet: sevenDaySonnet,
+            sevenDayOpus: sevenDayOpus,
+            extraUsage: extraUsage
+        )
+    }
+
+    private func applyUsage(_ usage: OAuthUsageResponse, shouldNotify: Bool = true) {
         fiveHour       = usage.fiveHour
         sevenDay       = usage.sevenDay
         sevenDaySonnet = usage.sevenDaySonnet
         sevenDayOpus   = usage.sevenDayOpus
         extraUsage     = usage.extraUsage
         stage = PetStage(percent: usage.fiveHour?.percent ?? 0)
-        checkThresholdNotification()
+        if shouldNotify {
+            checkThresholdNotification()
+        }
     }
 
     private func checkThresholdNotification() {
