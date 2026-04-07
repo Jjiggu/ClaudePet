@@ -50,20 +50,57 @@ test("returns first available prefix in search order") {
 print("\n=== 2. UsageViewState ===")
 
 test("keeps usage content visible when stale data exists alongside an error") {
-    let state = UsageViewState.resolve(hasUsageData: true, isLoading: false, errorMessage: "Rate limited")
+    let state = UsageViewState.resolve(
+        hasUsageData: true,
+        isLoading: false,
+        errorMessage: "Rate limited",
+        statusMessage: nil
+    )
     return state.showsUsageContent
         && state.banner == UsageBannerState(style: .error, message: "Rate limited")
 }
 
 test("shows loading banner before first successful fetch") {
-    let state = UsageViewState.resolve(hasUsageData: false, isLoading: true, errorMessage: nil)
+    let state = UsageViewState.resolve(
+        hasUsageData: false,
+        isLoading: true,
+        errorMessage: nil,
+        statusMessage: nil
+    )
     return !state.showsUsageContent
         && state.banner == UsageBannerState(style: .info, message: "Loading")
 }
 
 test("hides banner when data is available and no status message exists") {
-    let state = UsageViewState.resolve(hasUsageData: true, isLoading: false, errorMessage: nil)
+    let state = UsageViewState.resolve(
+        hasUsageData: true,
+        isLoading: false,
+        errorMessage: nil,
+        statusMessage: nil
+    )
     return state.showsUsageContent && state.banner == nil
+}
+
+test("shows status banner while keeping cached content visible") {
+    let state = UsageViewState.resolve(
+        hasUsageData: true,
+        isLoading: false,
+        errorMessage: nil,
+        statusMessage: "Showing cached usage"
+    )
+    return state.showsUsageContent
+        && state.banner == UsageBannerState(style: .info, message: "Showing cached usage")
+}
+
+test("keeps usage content visible while checking for newer data") {
+    let state = UsageViewState.resolve(
+        hasUsageData: true,
+        isLoading: true,
+        errorMessage: nil,
+        statusMessage: nil
+    )
+    return state.showsUsageContent
+        && state.banner == UsageBannerState(style: .info, message: "Checking for newer usage...")
 }
 
 print("\n─────────────────────")
