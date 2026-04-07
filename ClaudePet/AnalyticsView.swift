@@ -186,11 +186,13 @@ struct AnalyticsView: View {
     }
 
     private var usageTrendCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline) {
                 Text("Usage Trend")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(.primary.opacity(0.82))
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.primary.opacity(0.86))
+                    .lineLimit(1)
                 if isLoading {
                     ProgressView()
                         .scaleEffect(0.55)
@@ -198,8 +200,10 @@ struct AnalyticsView: View {
                 }
                 Spacer()
                 Text("7 days")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(.primary.opacity(0.72))
+                    .font(.caption2)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.secondary)
+                    .lineLimit(1)
             }
 
             UsageTrendChartView(
@@ -225,15 +229,6 @@ struct AnalyticsView: View {
                 Spacer(minLength: 0)
             }
         }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color.primary.opacity(0.045))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-        )
     }
 
     private var activityHistorySection: some View {
@@ -348,7 +343,7 @@ struct AnalyticsView: View {
                 .minimumScaleFactor(0.75)
         }
         .padding(.horizontal, 9)
-        .padding(.vertical, 7)
+        .padding(.vertical, 6)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.white.opacity(0.55), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
@@ -394,7 +389,8 @@ private struct UsageTrendChartView: View {
 
     private let horizontalInset: CGFloat = 8
     private let topInset: CGFloat = 10
-    private let bottomInset: CGFloat = 16
+    private let bottomInset: CGFloat = 10
+    private let plotHeight: CGFloat = 86
 
     private var hasUsage: Bool {
         points.contains { $0.tokens > 0 }
@@ -402,7 +398,15 @@ private struct UsageTrendChartView: View {
 
     private var focusedIndex: Int? {
         guard hasUsage, !points.isEmpty else { return nil }
-        return hoveredIndex ?? (points.count - 1)
+        return hoveredIndex
+    }
+
+    private var readoutPoint: UsageTrendPoint? {
+        guard hasUsage, !points.isEmpty else { return nil }
+        if let hoveredIndex {
+            return points[hoveredIndex]
+        }
+        return points.last
     }
 
     private static let tooltipDateFormatter: DateFormatter = {
@@ -412,91 +416,88 @@ private struct UsageTrendChartView: View {
     }()
 
     var body: some View {
-        GeometryReader { proxy in
-            let size = proxy.size
-            let chartPoints = plotPoints(in: size)
+        VStack(alignment: .leading, spacing: 6) {
+            GeometryReader { proxy in
+                let size = proxy.size
+                let chartPoints = plotPoints(in: size)
 
-            ZStack {
-                RoundedRectangle(cornerRadius: 13, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                accent.opacity(0.08),
-                                Color.primary.opacity(0.025)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-
-                if hasUsage, chartPoints.count > 1 {
-                    smoothPath(points: chartPoints, closingAt: size.height - bottomInset)
+                ZStack {
+                    RoundedRectangle(cornerRadius: 13, style: .continuous)
                         .fill(
                             LinearGradient(
                                 colors: [
-                                    accent.opacity(0.34),
-                                    accent.opacity(0.05)
+                                    accent.opacity(0.08),
+                                    Color.primary.opacity(0.025)
                                 ],
-                                startPoint: .top,
-                                endPoint: .bottom
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
                             )
                         )
 
-                    smoothPath(points: chartPoints)
-                        .stroke(
-                            accent,
-                            style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round)
-                        )
+                    if hasUsage, chartPoints.count > 1 {
+                        smoothPath(points: chartPoints, closingAt: size.height - bottomInset)
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        accent.opacity(0.34),
+                                        accent.opacity(0.05)
+                                    ],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
 
-                    if let focusedIndex {
-                        focusedOverlay(
-                            focusedIndex: focusedIndex,
-                            chartPoints: chartPoints,
-                            size: size
-                        )
+                        smoothPath(points: chartPoints)
+                            .stroke(
+                                accent,
+                                style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round)
+                            )
+
+                        if let focusedIndex {
+                            focusedOverlay(
+                                focusedIndex: focusedIndex,
+                                chartPoints: chartPoints,
+                                size: size
+                            )
+                        }
+                    } else {
+                        emptyChart(in: size)
                     }
-                } else {
-                    emptyChart(in: size)
+                }
+                .contentShape(Rectangle())
+                .onContinuousHover { phase in
+                    switch phase {
+                    case .active(let location):
+                        hoveredIndex = nearestIndex(for: location.x, in: size)
+                    case .ended:
+                        hoveredIndex = nil
+                    }
                 }
             }
-            .contentShape(Rectangle())
-            .onContinuousHover { phase in
-                switch phase {
-                case .active(let location):
-                    hoveredIndex = nearestIndex(for: location.x, in: size)
-                case .ended:
-                    hoveredIndex = nil
-                }
-            }
+            .frame(height: plotHeight)
+
+            hoverReadout
         }
     }
 
     private func focusedOverlay(focusedIndex: Int, chartPoints: [CGPoint], size: CGSize) -> some View {
         let point = chartPoints[focusedIndex]
-        let model = points[focusedIndex]
-        let showTooltip = hoveredIndex != nil
 
         return ZStack {
             Path { path in
                 path.move(to: CGPoint(x: point.x, y: topInset))
                 path.addLine(to: CGPoint(x: point.x, y: size.height - bottomInset))
             }
-            .stroke(accent.opacity(showTooltip ? 0.28 : 0.0), style: StrokeStyle(lineWidth: 1, dash: [3, 4]))
+            .stroke(accent.opacity(0.18), style: StrokeStyle(lineWidth: 1, dash: [3, 4]))
 
             Circle()
                 .fill(accent)
-                .frame(width: showTooltip ? 8 : 6, height: showTooltip ? 8 : 6)
+                .frame(width: 6, height: 6)
                 .overlay(
                     Circle()
-                        .stroke(Color.white.opacity(0.92), lineWidth: 1.5)
+                        .stroke(Color.white.opacity(0.90), lineWidth: 1.2)
                 )
                 .position(point)
-
-            if showTooltip {
-                hoverReadout(for: model)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                    .padding(10)
-            }
         }
     }
 
@@ -515,27 +516,27 @@ private struct UsageTrendChartView: View {
         }
     }
 
-    private func hoverReadout(for point: UsageTrendPoint) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Text(Self.tooltipDateFormatter.string(from: point.date))
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundColor(.primary.opacity(0.78))
-            Text("\(point.tokens.formatted()) tokens")
-                .font(.system(size: 10, weight: .medium))
-                .foregroundColor(.secondary)
-            Text(averageComparisonText(for: point))
-                .font(.system(size: 9, weight: .medium))
-                .foregroundColor(accent.opacity(0.9))
+    private var hoverReadout: some View {
+        HStack(spacing: 5) {
+            Circle()
+                .fill(hoveredIndex == nil ? Color.secondary.opacity(0.45) : accent)
+                .frame(width: 4, height: 4)
+
+            if let readoutPoint {
+                Text(readoutText(for: readoutPoint))
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundColor(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+            } else {
+                Spacer(minLength: 0)
+            }
         }
-        .padding(.horizontal, 9)
-        .padding(.vertical, 7)
-        .frame(width: 138, alignment: .leading)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .stroke(Color.white.opacity(0.45), lineWidth: 1)
-        )
-        .shadow(color: Color.black.opacity(0.10), radius: 8, x: 0, y: 4)
+        .frame(height: 16)
+    }
+
+    private func readoutText(for point: UsageTrendPoint) -> String {
+        "\(Self.tooltipDateFormatter.string(from: point.date)) · \(point.tokens.formatted()) tokens · \(averageComparisonText(for: point))"
     }
 
     private func averageComparisonText(for point: UsageTrendPoint) -> String {
