@@ -14,7 +14,7 @@ struct ClaudePetApp: App {
     var body: some Scene {
         MenuBarExtra {
             PopoverView(petManager: petManager)
-                .frame(width: 280)
+                .frame(width: 340)
                 .onAppear {
                     // MenuBarExtra(.window) does not automatically become key window
                     // when another app is focused, causing the first click inside to be
