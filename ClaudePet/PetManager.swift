@@ -206,15 +206,15 @@ final class PetManager: ObservableObject {
     /// Level 1–5 based on this month's token usage
     var petLevel: Int {
         switch monthlyTokens {
-        case 0..<500_000:            return 1
-        case 500_000..<2_000_000:    return 2
-        case 2_000_000..<5_000_000:  return 3
-        case 5_000_000..<10_000_000: return 4
-        default:                     return 5
+        case 0..<50_000_000:              return 1
+        case 50_000_000..<200_000_000:   return 2
+        case 200_000_000..<500_000_000:  return 3
+        case 500_000_000..<1_000_000_000: return 4
+        default:                          return 5
         }
     }
 
-    private static let levelThresholds = [0, 500_000, 2_000_000, 5_000_000, 10_000_000]
+    private static let levelThresholds = [0, 50_000_000, 200_000_000, 500_000_000, 1_000_000_000]
 
     /// 0.0–1.0 progress within the current level
     var levelProgress: Double {
@@ -230,6 +230,13 @@ final class PetManager: ObservableObject {
         let lv = petLevel - 1
         guard lv < 4 else { return 0 }
         return max(Self.levelThresholds[lv + 1] - monthlyTokens, 0)
+    }
+
+    /// Upper token threshold for current level (0 at max level)
+    var nextLevelTokens: Int {
+        let lv = petLevel - 1
+        guard lv < 4 else { return 0 }
+        return Self.levelThresholds[lv + 1]
     }
 
     /// Today's token count from JSONL

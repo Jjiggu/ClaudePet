@@ -355,29 +355,58 @@ private struct PetTabView: View {
                 .padding(.horizontal, 14)
 
             // Level + XP bar
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text("Lv.\(petManager.petLevel)")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(.primary.opacity(0.7))
-                    Spacer()
-                    Text("\(Int(petManager.levelProgress * 100))%")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
+            HStack(alignment: .center, spacing: 10) {
+                // 레벨 뱃지
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(levelBadgeGradient(for: petManager.petLevel))
+                        .frame(width: 38, height: 38)
+                    VStack(spacing: -1) {
+                        Text("LV")
+                            .font(.system(size: 7, weight: .bold))
+                            .foregroundColor(.white.opacity(0.75))
+                        Text("\(petManager.petLevel)")
+                            .font(.system(size: 18, weight: .black))
+                            .foregroundColor(.white)
+                    }
                 }
 
-                ProgressView(value: petManager.levelProgress)
-                    .tint(.green)
+                // XP 바 + 수치
+                VStack(alignment: .leading, spacing: 4) {
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            RoundedRectangle(cornerRadius: 5)
+                                .fill(Color.secondary.opacity(0.12))
+                            RoundedRectangle(cornerRadius: 5)
+                                .fill(xpBarGradient)
+                                .frame(width: max(geo.size.width * petManager.levelProgress, 0))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 5)
+                                        .fill(LinearGradient(
+                                            colors: [.white.opacity(0.25), .clear],
+                                            startPoint: .top, endPoint: .center))
+                                )
+                        }
+                    }
+                    .frame(height: 10)
 
-                if petManager.petLevel < 5 {
-                    let remaining = petManager.tokensToNextLevel
-                    Text("다음 레벨까지 \(remaining.formatted()) 토큰")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                } else {
-                    Text("최고 레벨 달성! 🎉")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
+                    HStack {
+                        Text(petManager.petLevel < 5
+                             ? "\(compactTokens(petManager.monthlyTokens)) XP"
+                             : "MAX LEVEL")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                        Spacer()
+                        if petManager.petLevel < 5 {
+                            Text("/ \(compactTokens(petManager.nextLevelTokens))")
+                                .font(.caption2)
+                                .foregroundColor(.secondary.opacity(0.7))
+                        } else {
+                            Text("🎉 최고 레벨!")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                        }
+                    }
                 }
             }
             .padding(.horizontal, 14)
@@ -498,6 +527,35 @@ private struct PetTabView: View {
             Text(value)
                 .font(.caption)
                 .foregroundColor(.primary.opacity(0.75))
+        }
+    }
+
+    private func levelBadgeGradient(for level: Int) -> LinearGradient {
+        let (top, bottom): (Color, Color) = switch level {
+        case 1: (.mint, .green)
+        case 2: (Color(red: 0.4, green: 0.6, blue: 1.0), .blue)
+        case 3: (Color(red: 0.8, green: 0.5, blue: 1.0), .purple)
+        case 4: (.yellow, .orange)
+        default: (Color(red: 1.0, green: 0.4, blue: 0.4), .red)
+        }
+        return LinearGradient(colors: [top, bottom],
+                              startPoint: .topLeading, endPoint: .bottomTrailing)
+    }
+
+    private let xpBarGradient = LinearGradient(
+        colors: [Color(red: 1.0, green: 0.82, blue: 0.2),
+                 Color(red: 1.0, green: 0.52, blue: 0.05)],
+        startPoint: .leading, endPoint: .trailing
+    )
+
+    private func compactTokens(_ n: Int) -> String {
+        switch n {
+        case 0..<1_000_000:
+            return String(format: "%.1fK", Double(n) / 1_000)
+        case 1_000_000..<1_000_000_000:
+            return String(format: "%.1fM", Double(n) / 1_000_000)
+        default:
+            return String(format: "%.1fB", Double(n) / 1_000_000_000)
         }
     }
 
