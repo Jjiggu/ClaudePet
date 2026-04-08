@@ -30,3 +30,9 @@ ClaudePet/.claude/
 *.mobileprovision
 Secrets*.plist
 LocalSecrets*.plist
+
+# Release artifacts
+dist/
+
+# Personal deployment notes (not for public repo)
+DEPLOY.md

@@ -78,7 +78,17 @@ Download the latest `.dmg` from the [Releases](../../releases) page, open it, an
 
 > [Releases](../../releases) 페이지에서 최신 `.dmg`를 다운로드하여 응용 프로그램 폴더로 드래그하세요.
 
-### Option 2: Build from Source / 소스 빌드
+### Option 2: Homebrew / Homebrew로 설치
+
+```bash
+brew install --cask Jjiggu/tap/claudepet
+```
+
+> **Gatekeeper 경고 우회 (공증 미적용):** 첫 실행 시 "확인할 수 없는 개발자" 경고가 뜹니다.
+> Finder에서 앱 아이콘을 우클릭 → "열기" → "열기" 클릭으로 한 번만 허용하면 됩니다.
+> 또는 터미널에서: `xattr -d com.apple.quarantine /Applications/ClaudePet.app`
+
+### Option 3: Build from Source / 소스 빌드
 
 ```bash
 git clone https://github.com/Jjiggu/ClaudePet.git
