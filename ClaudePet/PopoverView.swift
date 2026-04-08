@@ -306,11 +306,11 @@ private struct MainView: View {
                 Text("Extra Usage")
                     .font(.caption).fontWeight(.medium)
                 Spacer()
-                Text(String(format: "%.0f%%", extra.percent * 100))
+                Text(extra.utilizationText)
                     .font(.caption2).foregroundColor(.secondary)
             }
             ProgressView(value: extra.percent).tint(.secondary)
-            Text(String(format: "$%.2f / $%.2f this month", extra.usedCredits, extra.monthlyLimit))
+            Text(extra.spendingSummaryText)
                 .font(.caption2).foregroundColor(.secondary.opacity(0.7))
         }
     }

@@ -26,19 +26,39 @@ struct UsageQuota: Codable {
 struct ExtraUsage: Codable {
     let isEnabled: Bool
     /// Spending limit in dollars (e.g. 2000 = $2,000)
-    let monthlyLimit: Double
+    let monthlyLimit: Double?
     /// Amount spent so far this month in dollars
-    let usedCredits: Double
+    let usedCredits: Double?
     /// 0–100 percent; nil when nothing has been spent yet
     let utilization: Double?
 
     var percent: Double { min((utilization ?? 0) / 100.0, 1.0) }
+
+    var utilizationText: String {
+        guard let utilization else { return "—" }
+        return String(format: "%.0f%%", utilization)
+    }
+
+    var spendingSummaryText: String {
+        guard let usedCredits, let monthlyLimit else {
+            return "Usage details unavailable"
+        }
+        return String(format: "$%.2f / $%.2f this month", usedCredits, monthlyLimit)
+    }
 
     enum CodingKeys: String, CodingKey {
         case isEnabled    = "is_enabled"
         case monthlyLimit = "monthly_limit"
         case usedCredits  = "used_credits"
         case utilization
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        isEnabled = try container.decodeIfPresent(Bool.self, forKey: .isEnabled) ?? false
+        monthlyLimit = try container.decodeIfPresent(Double.self, forKey: .monthlyLimit)
+        usedCredits = try container.decodeIfPresent(Double.self, forKey: .usedCredits)
+        utilization = try container.decodeIfPresent(Double.self, forKey: .utilization)
     }
 }
 
