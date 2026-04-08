@@ -81,6 +81,7 @@ Download the latest `.dmg` from the [Releases](../../releases) page, open it, an
 ### Option 2: Homebrew / Homebrew로 설치
 
 ```bash
+brew tap Jjiggu/tap
 brew install --cask Jjiggu/tap/claudepet
 ```
 
