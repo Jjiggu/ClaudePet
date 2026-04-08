@@ -134,11 +134,11 @@ Animation speed scales with session usage: **4 fps** (idle) → **15 fps** (max)
 
 | Level | Monthly Tokens |
 |-------|----------------|
-| Lv.1 | 0 – 500K |
-| Lv.2 | 500K – 2M |
-| Lv.3 | 2M – 5M |
-| Lv.4 | 5M – 10M |
-| Lv.5 | 10M+ |
+| Lv.1 | 0 – 50M |
+| Lv.2 | 50M – 200M |
+| Lv.3 | 200M – 500M |
+| Lv.4 | 500M – 1B |
+| Lv.5 | 1B+ |
 
 Token counts are parsed from `~/.claude/projects/**/*.jsonl` (Claude Code session logs) — no API calls needed for this.
 
