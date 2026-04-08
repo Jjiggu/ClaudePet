@@ -13,6 +13,14 @@ build/
 *.xcodeproj/xcuserdata/
 *.xcworkspace/xcuserdata/
 
+# Developer debug/test tools
+check_usage.sh
+test_*.swift
+
+# Claude Code local settings
+.claude/
+ClaudePet/.claude/
+
 # Local environment and secret material
 .env
 .env.*
