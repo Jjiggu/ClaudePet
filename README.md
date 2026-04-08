@@ -84,9 +84,7 @@ Download the latest `.dmg` from the [Releases](../../releases) page, open it, an
 brew install --cask Jjiggu/tap/claudepet
 ```
 
-> **Gatekeeper 경고 우회 (공증 미적용):** 첫 실행 시 "확인할 수 없는 개발자" 경고가 뜹니다.
-> Finder에서 앱 아이콘을 우클릭 → "열기" → "열기" 클릭으로 한 번만 허용하면 됩니다.
-> 또는 터미널에서: `xattr -d com.apple.quarantine /Applications/ClaudePet.app`
+> Gatekeeper quarantine 속성이 설치 시 자동으로 제거되므로 별도 우회 작업이 필요하지 않습니다.
 
 ### Option 3: Build from Source / 소스 빌드
 
