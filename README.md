@@ -1,93 +1,87 @@
-# ClaudePet 🦭
+# ClaudePet
 
-A macOS menu bar app that monitors your Claude Pro/Max usage in real time — with an animated pixel-art pet that reacts to how hard you're working.
+macOS menu bar app for monitoring Claude Pro/Max usage with a small animated pixel-art pet.
 
-> Claude Pro/Max 사용량을 실시간으로 모니터링하는 macOS 메뉴바 앱입니다. 세션 사용량에 따라 움직임이 달라지는 픽셀아트 펫 캐릭터와 함께합니다.
+ClaudePet reads the Claude Code OAuth login already stored on your Mac, checks your Claude usage periodically, and shows the current 5-hour session status from the menu bar. Local Claude Code journal files are used for recent activity charts and pet level progress.
 
 ![macOS](https://img.shields.io/badge/macOS-13%2B-blue)
 ![Swift](https://img.shields.io/badge/Swift-5.9%2B-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
----
+Language: [English](README.md) | [한국어](README.ko.md)
 
-## What is ClaudePet? / 소개
+## Features
 
-ClaudePet sits in your menu bar and shows your Claude session quota at a glance. The pet character (Seal or Cat) animates faster as your 5-hour session fills up — 4 fps at idle, 15 fps when you're running hot. It grows in level as your monthly token usage accumulates, like a Tamagotchi for your Claude usage.
+### Menu Bar
 
-> 메뉴바에 상주하며 Claude 5시간 세션 쿼터를 한눈에 확인할 수 있습니다. 펫(물범 또는 고양이)은 세션 사용량에 따라 애니메이션 속도가 달라지고, 월간 토큰 사용량이 쌓이면 레벨이 오릅니다.
+- Animated pet sprite in the macOS menu bar
+- Optional 5-hour session usage percentage
+- Display modes: icon only, usage only, or both
+- Tooltip with current session status, cached-data state, or auth error
 
----
+### Usage Tab
 
-## Features / 기능
+- Claude quota rows for:
+  - Session (5h)
+  - Weekly (7d)
+  - Sonnet weekly
+  - Opus weekly
+- Reset countdowns when the API provides `resets_at`
+- Plan badge when `/api/account` returns a plan name
+- Extra Usage row when the account has `extra_usage.is_enabled`
+- Clear banners for missing auth, expired auth, API errors, and rate limiting
+- Last-known-good usage cache when the API is temporarily unavailable
 
-### Usage Tab / 사용량 탭
-- **4 live quota bars** — 5h session, 7-day weekly, Sonnet weekly, Opus weekly
-- **Extra Usage card** — shows monthly overage when enabled on your plan
-- **Plan name badge** — displays your current Claude plan
-- **Reset countdown** — shows exactly when each quota resets
-- **Error banners** — clear hints when authentication fails or you're rate limited
-- **Cached display** — shows last known usage with an orange indicator when the API is unavailable
+### Stats Tab
 
-> 5시간 세션 / 7일 주간 / 소네트 주간 / 오퍼스 주간 쿼터를 프로그레스 바로 표시합니다. API 오류 시 마지막 캐시 데이터를 주황색 표시와 함께 보여줍니다.
+- 7-day token trend chart with hover details
+- 35-day local activity heatmap
+- Total tokens, active days, current streak, active-day average, and week-over-week comparison
+- Data is read locally from Claude Code JSONL journals
 
-### Stats Tab / 통계 탭
-- **35-day activity heatmap** — GitHub-style grid showing daily token usage
-- **7-day trend chart** — cubic Bézier curve with hover tooltips
-- **Summary cards** — current streak, daily average, week-over-week comparison
-- **Monthly totals** — total tokens and active day count
+### Pet Tab
 
-> 35일 토큰 히트맵, 7일 트렌드 차트, 연속 사용일·일평균·주간 비교 카드를 제공합니다.
+- Larger animated pet display
+- Session mood badge based on 5-hour usage:
+  - `0-1%`: 휴식중
+  - `1-20%`: 안정적
+  - `20-40%`: 시동중
+  - `40-60%`: 집중중
+  - `60-100%`: 과열직전
+- Animation speed scales with session usage from 4 fps to 15 fps
+- Pet level and XP progress based on this month's local Claude Code token usage
+- Today, yesterday, and current-month token counts
+- Character picker for Seal and Cat
 
-### Pet Tab / 펫 탭
-- **Animated pet display** — reacts to your current session activity
-- **Session condition badge** — 5 moods based on your 5h quota usage
-- **XP level bar** — progress toward next level (Lv.1–5)
-- **Today / Yesterday token counts** — from local Claude Code journals
-- **Character selector** — switch between Seal and Cat
+### Settings
 
-> 세션 상태에 따른 펫 애니메이션, 기분 배지, 레벨 진행 바, 오늘/어제 토큰 수를 보여줍니다.
-
-### Menu Bar / 메뉴바
-- Animated pet sprite + optional usage percentage
-- Display modes: icon only / percentage only / both
-
-> 메뉴바에 애니메이션 펫과 사용량 퍼센트를 함께 또는 개별로 표시할 수 있습니다.
-
-### Settings / 설정
-- Auto-refresh interval: Off / 1m / 2m / 5m / 10m
-- Local notifications when session crosses a threshold (50–95%)
+- Authentication status and token source
+- Auto-refresh interval: Off, 1m, 2m, 5m, or 10m
+- Local notification threshold from 50% to 95%
 - Menu bar display mode selector
 
----
+## Requirements
 
-## Requirements / 요구사항
+- macOS 13 Ventura or later
+- Claude Code installed and logged in with a Claude Pro or Max account
+- Xcode 15 or later when building from source
 
-- macOS 13 (Ventura) or later
-- [Claude Code](https://claude.ai/code) installed and authenticated (`claude login`)
-- Claude Pro or Max subscription
+ClaudePet is for Claude Code OAuth users. It does not use Anthropic API keys.
 
-> Xcode는 소스 빌드 시에만 필요합니다. 릴리스 빌드를 다운로드하면 별도 설치 불필요합니다.
+## Installation
 
----
+### Download Release
 
-## Installation / 설치
+Download the latest DMG from the [Releases](https://github.com/Jjiggu/ClaudePet/releases) page, open it, and drag `ClaudePet.app` to Applications.
 
-### Option 1: Download Release (recommended) / 릴리스 다운로드 (권장)
-
-Download the latest `.dmg` from the [Releases](../../releases) page, open it, and drag ClaudePet to your Applications folder.
-
-> [Releases](../../releases) 페이지에서 최신 `.dmg`를 다운로드하여 응용 프로그램 폴더로 드래그하세요.
-
-### Option 2: Homebrew / Homebrew로 설치
+### Homebrew
 
 ```bash
 brew tap Jjiggu/tap
 brew install --cask Jjiggu/tap/claudepet
 ```
 
-> Gatekeeper quarantine 속성이 설치 시 자동으로 제거되므로 별도 우회 작업이 필요하지 않습니다.
-
-### Option 3: Build from Source / 소스 빌드
+### Build From Source
 
 ```bash
 git clone https://github.com/Jjiggu/ClaudePet.git
@@ -95,127 +89,130 @@ cd ClaudePet
 open ClaudePet.xcodeproj
 ```
 
-Press ⌘R in Xcode to build and run.
+Select the `ClaudePet` scheme in Xcode and run it with `Cmd+R`.
 
----
+For a local release DMG:
 
-## Authentication / 인증
-
-ClaudePet reads the OAuth token that Claude Code stores locally — no separate API key needed.
-
-> Claude Code가 로컬에 저장한 OAuth 토큰을 자동으로 읽습니다. 별도 API 키 불필요합니다.
-
-**Step 1**: Install Claude Code
 ```bash
-npm install -g @anthropic-ai/claude-code
+./scripts/build-release.sh
 ```
 
-**Step 2**: Log in
+The script creates `dist/ClaudePet-{version}.dmg` from the Xcode project version.
+
+## Authentication
+
+ClaudePet reads the OAuth token created by Claude Code. No separate API key or setup screen is required.
+
+Install and log in to Claude Code first:
+
+```bash
+npm install -g @anthropic-ai/claude-code
+claude login
+```
+
+Token lookup order:
+
+1. `~/.claude/.credentials.json`
+2. macOS Keychain service `Claude Code-credentials`
+
+If no token is found, ClaudePet shows an authentication error and the Settings view reports `Not connected`.
+
+## Data Sources
+
+| Data | Source |
+| --- | --- |
+| 5-hour, 7-day, Sonnet weekly, Opus weekly quotas | `GET https://api.anthropic.com/api/oauth/usage` |
+| Extra Usage | `GET https://api.anthropic.com/api/oauth/usage` |
+| Plan name | `GET https://api.anthropic.com/api/account` |
+| Daily activity, monthly tokens, pet level | `~/.claude/projects/**/*.jsonl` |
+
+Usage and account API requests are sent to Anthropic with your local Claude Code OAuth token and the `anthropic-beta: oauth-2025-04-20` header.
+
+Journal parsing is local. ClaudePet counts assistant records and sums:
+
+- `input_tokens`
+- `output_tokens`
+- `cache_creation_input_tokens`
+- `cache_read_input_tokens`
+
+## Polling And Caching
+
+- Default auto-refresh interval is 5 minutes.
+- Manual refresh uses the same rate-limit guard as automatic refresh.
+- ClaudePet never sends usage API requests more frequently than once per minute.
+- On HTTP 429 or rate-limit responses, retry backoff doubles from 60 seconds up to 30 minutes.
+- The last successful usage response is saved at `~/Library/Application Support/ClaudePet/usage-cache.json`.
+- Cached usage is shown with an orange status indicator when fresh data cannot be fetched.
+- Plan name is cached for 24 hours.
+
+## Pet Levels
+
+Pet level is based on current-month token usage parsed from local Claude Code journals. The counter resets naturally at the start of each calendar month.
+
+| Level | Monthly tokens |
+| --- | ---: |
+| Lv.1 | 0 - 49,999,999 |
+| Lv.2 | 50,000,000 - 199,999,999 |
+| Lv.3 | 200,000,000 - 499,999,999 |
+| Lv.4 | 500,000,000 - 999,999,999 |
+| Lv.5 | 1,000,000,000+ |
+
+## Characters
+
+| Character | Display name | Menu bar frames | Pet tab frames |
+| --- | --- | ---: | ---: |
+| Seal | 물범 말랑이 | 6 | 6 |
+| Cat | 고양 말랑이 | 2 | 2 |
+
+Selected character, menu bar display mode, refresh interval, notification settings, backoff state, cached plan name, and the latest usage cache are persisted locally.
+
+## Privacy And Security
+
+- ClaudePet reads the same OAuth login that Claude Code stores locally.
+- It does not ask for or store Anthropic API keys.
+- It stores only app preferences and the last successful usage snapshot locally.
+- Local journal parsing stays on your machine.
+- Network traffic is limited to the Anthropic usage and account endpoints listed above.
+- The app is not sandboxed because it needs access to `~/.claude` files and the Claude Code Keychain item.
+
+## Troubleshooting
+
+### No OAuth Token
+
+Run:
+
 ```bash
 claude login
 ```
 
-ClaudePet automatically detects your token from:
-1. `~/.claude/.credentials.json` (primary)
-2. macOS Keychain — service `Claude Code-credentials` (fallback)
+Then open ClaudePet Settings and check whether Authentication shows `Connected`.
 
-If the token is missing or expired, the app shows an error banner with instructions.
+### Rate Limited
 
-> 토큰이 없거나 만료된 경우 앱 내 에러 배너에서 안내를 확인할 수 있습니다.
+Wait for the retry time shown in the popover. Repeated manual refreshes do not bypass the cooldown and can make the upstream rate limit last longer.
 
----
+### Stats Are Empty
 
-## Pet System / 펫 시스템
+Stats require local Claude Code journal files under `~/.claude/projects`. They appear after Claude Code has written assistant usage records.
 
-### Session Conditions / 세션 상태 (5h quota)
+### Cached Usage Looks Stale
 
-| Condition | Usage | Description |
-|-----------|-------|-------------|
-| Idle / 휴식중 | 0–1% | Resting quietly |
-| Calm / 안정적 | 1–20% | Plenty of headroom |
-| Warming Up / 시동중 | 20–40% | Getting into it |
-| Focused / 집중중 | 40–60% | In the zone |
-| Overloaded / 과열직전 | 60–100% | Running hot |
+ClaudePet keeps showing the last successful usage snapshot when the API is unavailable. The popover status indicator turns orange in cached mode.
 
-Animation speed scales with session usage: **4 fps** (idle) → **15 fps** (max).
+## Development Notes
 
-### Pet Levels / 펫 레벨 (monthly tokens from local journals)
+- App entry point: `ClaudePet/ClaudePetApp.swift`
+- Shared state and polling: `ClaudePet/PetManager.swift`
+- OAuth usage/account API client: `ClaudePet/UsageAPIClient.swift`
+- Claude Code token loading: `ClaudePet/AuthLoader.swift`
+- JSONL journal parsing: `ClaudePet/JournalLoader.swift`
+- Menu bar UI: `ClaudePet/MenuBarView.swift`
+- Popover tabs and character picker: `ClaudePet/PopoverView.swift`
+- Analytics UI: `ClaudePet/AnalyticsView.swift`
+- Settings UI: `ClaudePet/SettingsView.swift`
 
-| Level | Monthly Tokens |
-|-------|----------------|
-| Lv.1 | 0 – 50M |
-| Lv.2 | 50M – 200M |
-| Lv.3 | 200M – 500M |
-| Lv.4 | 500M – 1B |
-| Lv.5 | 1B+ |
-
-Token counts are parsed from `~/.claude/projects/**/*.jsonl` (Claude Code session logs) — no API calls needed for this.
-
-> 월간 토큰 수는 로컬 Claude Code 세션 로그(JSONL)에서 파싱합니다. API 호출 없이 계산됩니다.
-
----
-
-## Characters / 캐릭터
-
-| Character | 이름 | Frames |
-|-----------|------|--------|
-| Seal | 물범 말랑이 | 6 frames |
-| Cat | 고양 말랑이 | 2 frames |
-
-Switch characters anytime from the Pet tab. Selection persists across restarts.
-
-> 펫 탭에서 언제든지 캐릭터를 변경할 수 있으며, 재시작 후에도 유지됩니다.
-
----
-
-## How It Works / 동작 원리
-
-**Data sources / 데이터 소스:**
-
-| Source | Used for |
-|--------|----------|
-| `GET /api/oauth/usage` (Anthropic API) | Session %, weekly quotas, Extra Usage |
-| `~/.claude/projects/**/*.jsonl` | Monthly tokens, daily activity, pet level |
-| `GET /api/account` (Anthropic API) | Plan name (cached 24h) |
-
-**Polling behavior / 폴링 동작:**
-- Default refresh: every 5 minutes (configurable)
-- Minimum gap between requests: 60 seconds
-- On HTTP 429: backoff doubles (60s → 120s → … → 1800s max), resets on success
-- Last successful data is cached locally and shown with an orange indicator when stale
-
-**Memory footprint:** ~20–30 MB
-
----
-
-## Tech Stack / 기술 스택
-
-- Swift 5.9+, SwiftUI, AppKit
-- macOS 13+ (Ventura+)
-- Zero external dependencies / 외부 의존성 없음
-- Swift Concurrency (async/await)
-- `LSUIElement = true` — menu bar only, no Dock icon
-
----
-
-## Privacy / 개인정보 처리
-
-- No data leaves your device except the two Anthropic API calls above (using your own OAuth token)
-- Token is read from local file / Keychain — never stored elsewhere by this app
-- JSONL parsing happens entirely locally
-
-> 위 2개의 Anthropic API 호출 외에는 어떠한 데이터도 외부로 전송되지 않습니다. JSONL 파싱은 로컬에서만 이루어집니다.
-
----
-
-## Acknowledgements / 참고
-
-- [Claude God](https://github.com/Lcharvol/Claude-God) (MIT) — OAuth API integration patterns
-- [TokenEater](https://github.com/AThevon/TokenEater) (MIT) — lightweight architecture reference
-- [RunCat](https://kyome.io/runcat/) — menu bar animation concept
-
----
+The project has no external package dependencies and currently has no XCTest target.
 
 ## License
 
-MIT — see [LICENSE](LICENSE)
+MIT. See [LICENSE](LICENSE).
